@@ -3,12 +3,7 @@
 
 #-----------------------------------------------------------------------------
 
-SDKROOT		= $(shell ls -d /Developer/SDKs/MacOSX* | tail -n1 )
-SDKVERSION	= $(shell echo "$(SDKROOT)" | sed -E 's/.*MacOSX//; s/([0-9]*\.[0-9*]).*/\1/g' )
-
-CC	 = "gcc-4.0"
-CFLAGS	+= -mmacosx-version-min=${SDKVERSION} -isysroot ${SDKROOT}
-LDFLAGS	+= -mmacosx-version-min=${SDKVERSION} -isysroot ${SDKROOT}
+CC	 = "gcc"
 
 #-----------------------------------------------------------------------------
 

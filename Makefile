@@ -285,7 +285,6 @@ CFLAGS		:= $(strip $(CFLAGS))
 
 DEPFLAGS	+= -MMD
 
-LDFLAGS		+= -static-libgcc
 LDFLAGS		:= $(strip $(LDFLAGS))
 
 LIBS		+= $(XLIBS)
