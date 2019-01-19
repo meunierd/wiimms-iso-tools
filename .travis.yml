@@ -1,0 +1,7 @@
+---
+language: c
+matrix:
+  include:
+    - os: osx
+    - os: linux
+script: make
