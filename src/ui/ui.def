@@ -8,7 +8,8 @@
 	"wit [option]... command [option|parameter|@file]...", \
 	"Wiimms ISO Tool : It can list, analyze, verify, convert, split, join," \
 	" patch, mix, extract, compose, rename and compare Wii and GameCube" \
-	" discs. It can create and dump different other Wii file formats." )
+	" images. It also can create and dump different other Wii file" \
+	" formats." )
 
 #:def_cmd( "VERSION", "VERSION", \
 	"wit VERSION [ignored]...", \
@@ -22,9 +23,8 @@
 #:def_cmd( "INFO", "INFO", \
 	"wit INFO [keyword]...", \
 	"Print some internal information about the keywords. If the keyword" \
-	" @ALL@ is set or no keyword is entered information for all possible" \
-	" keywords are printed. Possible keywords are: @FILE-FORMAT@ and" \
-	" @ALL@." )
+	" @ALL@ is set or no keyword is entered, then all informations are" \
+	" printed. Possible keywords are: @IMAGE-FORMAT@ and @ALL@." )
 
 #:def_cmd( "TEST", "TEST", \
 	"wit TEST [ignored]...", \
@@ -41,6 +41,13 @@
 	" {--compression} for syntax details. If no mode is given than print a" \
 	" table with all available compression modes and alternative mode" \
 	" names." )
+
+#:def_cmd( "FEATURES", "FEATURES", \
+	"wit FEATURES [feature]...", \
+	"Check, if the requested features are available. All keywords are" \
+	" possible. If no keyword is used, all supported features are printed." \
+	" The exit status is 0 for 'all features supported', 1 for 'some" \
+	" features supported' and 2 for 'no feature supported'." )
 
 #:def_cmd( "ANAID", "ANAID", \
 	"wit ANAID [id]...", \
@@ -102,6 +109,11 @@
 	"wit ID6 [source]...", \
 	"Print ID6 of all found ISO files as simple list." )
 
+#:def_cmd( "ID8", "ID8", \
+	"wit ID8 [source]...", \
+	"Print ID6 + 2 next bytes as disc and version number of all found ISO" \
+	" files as simple list." )
+
 #:def_cmd( "FRAGMENTS", "FRAGMENTS", \
 	"wit FRAGMENTS [source]...", \
 	"Print the image fragments and, if possible, their file system mapping" \
@@ -145,34 +157,34 @@
 
 #:def_cmd( "DIFF", "DIFF|CMP", \
 	"wit DIFF source dest\n" \
-	"wit DIFF [[--source] source]... [--recurse source]... [-d|-D] dest", \
+	"wit DIFF [[--source|--recurse] source]... [-d|-D] dest", \
 	"DIFF compares ISO images in scrubbed or raw mode or on file level." \
 	" Images, WBFS partitions and directories are accepted as source. DIFF" \
 	" works like {COPY} but comparing source and destination." )
 
 #:def_cmd( "FDIFF", "FDIFF|FCMP", \
 	"wit FDIFF source dest\n" \
-	"wit FDIFF [[--source] source]... [--recurse source]... [-d|-D] dest", \
+	"wit FDIFF [[--source|--recurse] source]... [-d|-D] dest", \
 	"FDIFF compares ISO images on file level. Images, WBFS partitions and" \
 	" directories are accepted as source. 'FDIFF' is a shortcut for {DIFF" \
 	" --files +}." )
 
 #:def_cmd( "EXTRACT", "EXTRACT|X", \
 	"wit EXTRACT source dest\n" \
-	"wit EXTRACT [[--source] source]... [--recurse source]... [-d|-D] dest", \
+	"wit EXTRACT [[--source|--recurse] source]... [-d|-D] dest", \
 	"Extract all files of each source to new directory structures. Images," \
 	" WBFS partitions and directories are accepted as source." )
 
 #:def_cmd( "COPY", "COPY|CP", \
 	"wit COPY source dest\n" \
-	"wit COPY [[--source] source]... [--recurse source]... [-d|-D] dest", \
+	"wit COPY [[--source|--recurse] source]... [-d|-D] dest", \
 	"Copy, scrub, convert, join, split, compose, extract, patch, encrypt" \
 	" and decrypt Wii and GameCube disc images. Images, WBFS partitions" \
 	" and directories are accepted as source." )
 
 #:def_cmd( "CONVERT", "CONVERT|CV|SCRUB|SB", \
 	"wit CONVERT source\n" \
-	"wit CONVERT [[--source] source]... [--recurse source]...", \
+	"wit CONVERT [[--source|--recurse] source]...", \
 	"Convert, scrub, join, split, compose, extract, patch, encrypt and" \
 	" decrypt Wii and GameCube disc images and replace the source with the" \
 	" result. Images, WBFS partitions and directories are accepted as" \
@@ -186,25 +198,25 @@
 
 #:def_cmd( "EDIT", "EDIT|ED", \
 	"wit EDIT source\n" \
-	"wit EDIT [[--source] source]... [--recurse source]...", \
+	"wit EDIT [[--source|--recurse] source]...", \
 	"Edit an existing Wii and GameCube ISO image and patch some values." \
 	" Images, WBFS partitions and directories are accepted as source." )
 
 #:def_cmd( "IMGFILES", "IMGFILES|IF", \
 	"wit IMGFILES source\n" \
-	"wit IMGFILES [[--source] source]... [--recurse source]...", \
+	"wit IMGFILES [[--source|--recurse] source]...", \
 	"Print a list of all image files including their associated split" \
 	" files. Each file is printed on a separate line for further batch" \
 	" processing." )
 
 #:def_cmd( "REMOVE", "REMOVE|RM", \
 	"wit REMOVE source\n" \
-	"wit REMOVE [[--source] source]... [--recurse source]...", \
+	"wit REMOVE [[--source|--recurse] source]...", \
 	"Remove images including their associated split files." )
 
 #:def_cmd( "MOVE", "MOVE|MV", \
 	"wit MOVE source dest\n" \
-	"wit MOVE [[--source] source]... [--recurse source]... [-d|-D] dest", \
+	"wit MOVE [[--source|--recurse] source]... [-d|-D] dest", \
 	"Move and rename Wii and GameCube ISO images. Images, WBFS partitions" \
 	" and directories are accepted as source." )
 
@@ -218,7 +230,7 @@
 
 #:def_cmd( "VERIFY", "VERIFY|V", \
 	"wit VERIFY [source]...", \
-	"Verify ISO images (calculate and compare SHA1 check sums) to find bad" \
+	"Verify ISO images (calculate and compare SHA1 checksums) to find bad" \
 	" dumps." )
 
 #:def_cmd( "SKELETON", "SKELETON|SKEL", \
@@ -269,7 +281,9 @@
 
 #:def_opt( "PROGRESS", "P|progress", "G", \
 	"", \
-	"Print progress counter independent of verbose level." )
+	"Print progress counter. If --verbose is set at least twice, printing" \
+	" is enabled too. If progress is enabled, the default of --dsync is" \
+	" changed." )
 
 #:def_opt( "SCAN_PROGRESS", "scan-progress|scanprogress", "G", \
 	"", \
@@ -286,6 +300,29 @@
 	" default is '%'. For Windows (CYGWIN) it is a good choice to set" \
 	" @'-E$$'@ to avoid conflicts with command shell variables." )
 
+#:def_opt( "COLOR", "color", "GO", \
+	"[=modus]", \
+	"Define the modus for colored text output. Allowed keywords are: @OFF@" \
+	" or @NO-COLORS@ to disable colors, @AUTO@ (default) for automatic" \
+	" detection, @ON@ for automatic detection but never @OFF@, @8-COLORS@" \
+	" and @256-COLORS@ for 8 and 256 color support. Without parameter," \
+	" @ON@ is used.\n" \
+	"  @AUTO@ will enable colorized output only for terminals. @AUTO@ and" \
+	" @ON@ use environment variable @TERM@ to find the correct color" \
+	" modus.\n" \
+	"  If a command is prefixed by @'C-'@, then @--color=ON@ is used" \
+	" implicitly as default." )
+
+#:def_opt( "COLOR_256", "256-colors|256colors", "G", \
+	"", \
+	"Short cut for {--color=256-colors}: Force colorized text with 256" \
+	" color support." )
+
+#:def_opt( "NO_COLOR", "no-colors|nocolors", "G", \
+	"", \
+	"Short cut for {--color=off}: Deactivate colorized text. This is the" \
+	" default, if an output file is not a terminal." )
+
 #:def_opt( "IO", "io", "GP", \
 	"flags", \
 	"Setup the IO mode for experiments. The standard file IO is based on" \
@@ -297,9 +334,22 @@
 	"", \
 	"Force operation." )
 
+#:def_opt( "DSYNC", "dsync", "GO", \
+	"[=mode]", \
+	"This option enables the usage of flag O_DSYNC when opening a" \
+	" partition at a hard drive for writing. With activated flag, writing" \
+	" an image is some percent slower, but the progress counters are exact" \
+	" again.\n" \
+	"  Parameter MODE is optional. If set, it is one of OFF (disable), ON" \
+	" (enable) or AUTO (default). With AUTO, DSYNC is enabled if the" \
+	" progress counters are active.\n" \
+	"  This option has only impact, if compiler and operation system" \
+	" support the flag O_DSYNC. Linux does." )
+
 #:def_opt( "TITLES", "T|titles", "GMP", \
 	"file", \
-	"Read file for disc titles. -T0 disables titles lookup." )
+	"Read file for disc titles. @-T/@ disables automatic search for title" \
+	" files." )
 
 #:def_opt( "UTF_8", "utf-8|utf8", "G", \
 	"", \
@@ -567,8 +617,8 @@
 #:def_opt( "TT_ID", "tt-id|ttid", "CP", \
 	"id", \
 	"This is a short cut for {--ticket id --tmd id}. If TICKET and TMD" \
-	" differ, the game will freeze after loading. So it make sense to" \
-	" change only TICKET and TMD IDs together." )
+	" differ, the game will freeze after loading. So it makes only sense" \
+	" to change TICKET and TMD IDs together." )
 
 #:def_opt( "WBFS_ID", "wbfs-id|wbfsid", "CP", \
 	"id", \
@@ -596,6 +646,26 @@
 	"This $patching$ option defines the system version (IOS to load)" \
 	" within TMD. The format is @'HIGH:LOW'@ or @'HIGH-LOW'@ or @'LOW'@." \
 	" If only @LOW@ is set than @HIGH@ is assumed as 1 (standard IOS)." )
+
+#:def_opt( "HTTP", "http", "C", \
+	"", \
+	"This $patching$ option replaces 'https' request to 'http' in the" \
+	" files 'main.dol' and 'rel/StaticR.rel', if the files exist. It also" \
+	" replaces the sub-domain 'naswii' to 'nas'." )
+
+#:def_opt( "DOMAIN", "domain", "CP", \
+	"domain", \
+	"This $patching$ option replaces the domain 'nintendowifi.net' by the" \
+	" new domain. The length of the new domain must not be larger than the" \
+	" old length (16 characters).\n" \
+	"  If the new domain length is not larger than 11, then 'gamespy.com'" \
+	" of 'sake.gamespy.com' is replaced too.  This is a special support" \
+	" for 'Super Smash Bros. Brawl'." )
+
+#:def_opt( "WIIMMFI", "wiimmfi", "C", \
+	"", \
+	"Patch the images for $Wiimmfi$, the new custom server. It is a short" \
+	" cut for {--http --domain wiimmfi.de}." )
 
 #:def_opt( "RM_FILES", "rm-files|rm-file|rmfiles|rmfile", "CP", \
 	"ruleset", \
@@ -628,7 +698,7 @@
 	" the DATA partition. $Fake signing$ is not necessary, but the" \
 	" partition becomes invalid, because the content of some files is not" \
 	" copied. If such file is accessed the Wii will halt immediately," \
-	" because the verification of the check sum calculation fails. The" \
+	" because the verification of the checksum calculation fails. The" \
 	" processing order of file options is: {--rm-files --zero-files" \
 	" --ignore-files}." )
 
@@ -653,6 +723,18 @@
 #:def_opt( "DEST2", "D|DEST", "CP", \
 	"path", \
 	"Like {--dest}, but create the directory path automatically." )
+
+#:def_opt( "AUTO_SPLIT", "auto-split|autosplit", "C", \
+	"", \
+	"Enable auto split modus: Split only if necessary and determine the" \
+	" split size automatically.\n" \
+	"  THIS OPTION IS EXPERIMENTAL. In future versions it becomes the" \
+	" default." )
+
+#:def_opt( "NO_SPLIT", "no-split|nosplit", "C", \
+	"", \
+	"Disable output file splitting. This is the default, but in future" \
+	" versions, the new option {--auto-split} becomes the default." )
 
 #:def_opt( "SPLIT", "z|split", "C", \
 	"", \
@@ -687,7 +769,8 @@
 
 #:def_opt( "TRUNC", "trunc", "C", \
 	"", \
-	"Truncate a $PLAIN ISO$ images to the needed size while creating." )
+	"Truncate $PLAIN ISO$ and $WBFS$ images after creating or copying to" \
+	" the minimal needed size with respect to the block size." )
 
 #:def_opt( "CHUNK_MODE", "chunk-mode|chunkmode|chm", "CP", \
 	"mode", \
@@ -791,31 +874,75 @@
 	"Remove source files/discs if operation is successful. If the source" \
 	" is an extracted file systems (FST) it isn't removed." )
 
-#:def_opt( "WDF", "W|wdf", "C", \
-	"", \
-	"Set ISO output file type to WDF (Wii Disc Format, default)" )
+#:def_opt( "WDF", "W|wdf", "CO", \
+	"[=param]", \
+	"Set the image output file type to WDF (Wii Disc Format). The output" \
+	" format is either WDFv1 or WDFv2. It depends of the input file format" \
+	" and of the aligning. {--wdf=param} is a short cut for {--wdf" \
+	" --align-wdf=param}." )
+
+#:def_opt( "WDF1", "wdf1", "CO", \
+	"[=param]", \
+	"Set image output file type to WDF and force version 1. {--wdf1=param}" \
+	" is a short cut for {--wdf1 --align-wdf=param}." )
+
+#:def_opt( "WDF2", "wdf2", "CO", \
+	"[=param]", \
+	"Set image output file type to WDF and force version 2. {--wdf2=param}" \
+	" is a short cut for {--wdf2 --align-wdf=param}." )
+
+#:def_opt( "ALIGN_WDF", "align-wdf|alignwdf|wdf-align|wdfalign", "GP", \
+	"[align][,minhole]", \
+	"Parameter @align@ defines the aligning factor for new WDF images. It" \
+	" must be a power of 2 and smaller or equal than 1 GiB. The default" \
+	" WDF alignment is 1 for WDF v1 and 4 for WDF v2. Usual values are 1," \
+	" 512, 4K and 32K.\n" \
+	"  The optional parameter @minhole@ defines the minimal hole size," \
+	" before a new chunk is created. If NULL, an internal value is used to" \
+	" minimize the total file size. @minhole@ can't be smaller than" \
+	" @align@." )
 
 #:def_opt( "ISO", "I|iso", "C", \
 	"", \
-	"Set ISO output file type to PLAIN ISO." )
+	"Set image output file type to PLAIN ISO." )
 
 #:def_opt( "CISO", "C|ciso", "C", \
 	"", \
-	"Set ISO output file type to CISO (Compact ISO, same as WBI)." )
+	"Set image output file type to CISO (Compact ISO, same as WBI)." )
 
 #:def_opt( "WBFS", "B|wbfs", "C", \
 	"", \
-	"Set ISO output file type to WBFS (Wii Backup File System) container." )
+	"Set image output file type to WBFS (Wii Backup File System, default)." )
 
 #:def_opt( "WIA", "wia", "CO", \
 	"[=compr]", \
-	"Set ISO output file type to WIA (Wii ISO Archive). The optional" \
+	"Set image output file type to WIA (Wii ISO Archive). The optional" \
 	" parameter is a compression mode and {--wia=mode} is a shortcut for" \
 	" {--wia --compression mode}." )
 
+#:def_opt( "GCZ", "G|gcz", "C", \
+	"", \
+	"Set image output file type to GCZ (Dolphins GameCube Zip)." )
+
+#:def_opt( "GCZ_ZIP", "gcz-zip|gczzip|gczip", "G", \
+	"", \
+	"If creating a GCZ image, a blockwise z-compression is tried. If the" \
+	" compressed data is larger than 98.5%, the uncompressed data is" \
+	" stored. Encrypted blocks are stored directly as uncompressed data," \
+	" because the 98.5% test fails all the time.\n" \
+	"  Option --gcz-zip disables this optimization for encrypted data and" \
+	" makes the creation process slower." )
+
+#:def_opt( "GCZ_BLOCK", "gcz-block|gczblock", "GP", \
+	"size", \
+	"The value defines the block size, if creating a GCZ image. The" \
+	" default is 16K (also Dolphins default). Smaller values enlarge the" \
+	" managment data and reduce the compression ratio. Use the option with" \
+	" caution!" )
+
 #:def_opt( "FST", "fst", "C", \
 	"", \
-	"Set ISO output mode to 'file system' (extracted ISO)." )
+	"Set image output mode to 'file system' (extracted ISO)." )
 
 #:def_opt( "FILES", "F|files", "CMP", \
 	"ruleset", \
@@ -946,6 +1073,11 @@
 	" the entered number of files differ. This option is ignored in quiet" \
 	" mode." )
 
+#:def_cmd_opt( "VERSION", "BRIEF", \
+	"", \
+	"Print only the version number, revision and system. If set twice," \
+	" print only the version number." )
+
 #:def_cmd_opt( "VERSION", "SECTIONS", \
 	"", \
 	"" )
@@ -961,6 +1093,11 @@
 #:def_cmd_opt( "INFO", "SECTIONS", \
 	"", \
 	"" )
+
+#:def_cmd_opt( "INFO", "LONG", \
+	"", \
+	"Print additional infos, if available. For @IMAGE-FORMAT@: Print a" \
+	" list, that explains the attributes." )
 
 #:def_cmd_opt( "ERROR", "SECTIONS", \
 	"", \
@@ -999,6 +1136,16 @@
 #:def_cmd_opt( "COMPR", "NUMERIC", \
 	"", \
 	"" )
+
+#:def_cmd_opt( "FEATURES", "QUIET", \
+	"", \
+	"If set, suppress messages about the single features. If set twice," \
+	" suppress also the summary message." )
+
+#:def_cmd_opt( "FEATURES", "VERBOSE", \
+	"", \
+	"Normally, a status line for each supported feature is printed. If" \
+	" set, print an info line for each requested feature." )
 
 #:def_cmd_opt( "ANAID", "NO_HEADER", \
 	"", \
@@ -1528,6 +1675,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "DUMP", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DUMP", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DUMP", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "DUMP", "RM_FILES", \
 	"", \
 	"" )
@@ -1651,6 +1810,108 @@
 	"" )
 
 #:def_cmd_opt( "ID6", "WBFS_ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "AUTO", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "SOURCE", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "NO_EXPAND", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "RECURSE", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "RDEPTH", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "EXCLUDE", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "EXCLUDE_PATH", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "INCLUDE", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "INCLUDE_PATH", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "INCLUDE_FIRST", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "ONE_JOB", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "JOB_LIMIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "IGNORE_FST", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "IGNORE_SETUP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "LINKS", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "LOGGING", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "LONG", \
+	"", \
+	"If set, a table with 5 IDs (DISC, BOOT, TICKET, TMD and WBFS) is" \
+	" printed. BOOT, TICKET and TMD IDs are taken from the main partition." \
+	" If set twice, all IDs of all partitions are printed." )
+
+#:def_cmd_opt( "ID8", "MODIFY", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "DISC_ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "BOOT_ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "TICKET_ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "TMD_ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "TT_ID", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ID8", "WBFS_ID", \
 	"", \
 	"" )
 
@@ -2862,6 +3123,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "DIFF", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DIFF", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DIFF", "ALIGN_WDF", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "DIFF", "ISO", \
 	"", \
 	"" )
@@ -2875,6 +3148,18 @@
 	"" )
 
 #:def_cmd_opt( "DIFF", "WIA", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DIFF", "GCZ", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DIFF", "GCZ_ZIP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "DIFF", "GCZ_BLOCK", \
 	"", \
 	"" )
 
@@ -3070,6 +3355,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "FDIFF", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "FDIFF", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "FDIFF", "ALIGN_WDF", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "FDIFF", "ISO", \
 	"", \
 	"" )
@@ -3083,6 +3380,18 @@
 	"" )
 
 #:def_cmd_opt( "FDIFF", "WIA", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "FDIFF", "GCZ", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "FDIFF", "GCZ_ZIP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "FDIFF", "GCZ_BLOCK", \
 	"", \
 	"" )
 
@@ -3294,6 +3603,18 @@
 	"" )
 
 #:def_cmd_opt( "EXTRACT", "IOS", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "WIIMMFI", \
 	"", \
 	"" )
 
@@ -3544,6 +3865,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "COPY", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "COPY", "RM_FILES", \
 	"", \
 	"" )
@@ -3596,6 +3929,14 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "COPY", "AUTO_SPLIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "NO_SPLIT", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "COPY", "SPLIT", \
 	"", \
 	"" )
@@ -3636,6 +3977,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "COPY", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "ALIGN_WDF", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "COPY", "ISO", \
 	"", \
 	"" )
@@ -3649,6 +4002,18 @@
 	"" )
 
 #:def_cmd_opt( "COPY", "WIA", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "GCZ", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "GCZ_ZIP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "COPY", "GCZ_BLOCK", \
 	"", \
 	"" )
 
@@ -3820,6 +4185,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "CONVERT", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "CONVERT", "RM_FILES", \
 	"", \
 	"" )
@@ -3837,6 +4214,14 @@
 	"" )
 
 #:def_cmd_opt( "CONVERT", "ALIGN_FILES", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "AUTO_SPLIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "NO_SPLIT", \
 	"", \
 	"" )
 
@@ -3888,6 +4273,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "CONVERT", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "ALIGN_WDF", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "CONVERT", "ISO", \
 	"", \
 	"" )
@@ -3901,6 +4298,18 @@
 	"" )
 
 #:def_cmd_opt( "CONVERT", "WIA", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "GCZ", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "GCZ_ZIP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "CONVERT", "GCZ_BLOCK", \
 	"", \
 	"" )
 
@@ -4048,6 +4457,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "EDIT", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EDIT", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EDIT", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "EDIT", "RM_FILES", \
 	"", \
 	"" )
@@ -4055,6 +4476,16 @@
 #:def_cmd_opt( "EDIT", "ZERO_FILES", \
 	"", \
 	"" )
+
+#:def_cmd_opt( "EDIT", "WDF1", \
+	"", \
+	"If the image format is WDF, then force WDF version 1. The optional" \
+	" aligning factor is ignored." )
+
+#:def_cmd_opt( "EDIT", "WDF2", \
+	"", \
+	"If the image format is WDF, then force WDF version 2. The optional" \
+	" aligning factor is ignored." )
 
 #:def_cmd_opt( "IMGFILES", "TITLES", \
 	"", \
@@ -4726,6 +5157,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "SKELETON", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SKELETON", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SKELETON", "ALIGN_WDF", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "SKELETON", "ISO", \
 	"", \
 	"" )
@@ -4764,6 +5207,14 @@
 	"" )
 
 #:def_cmd_opt( "MIX", "OVERWRITE", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "MIX", "AUTO_SPLIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "MIX", "NO_SPLIT", \
 	"", \
 	"" )
 
@@ -4815,6 +5266,18 @@
 	" partition is aligned." )
 
 #:def_cmd_opt( "MIX", "WDF", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "MIX", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "MIX", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "MIX", "ALIGN_WDF", \
 	"", \
 	"" )
 
@@ -4871,9 +5334,8 @@
 #:def_cmd( "INFO", "INFO", \
 	"wit INFO [keyword]...", \
 	"Print some internal information about the keywords. If the keyword" \
-	" @ALL@ is set or no keyword is entered information for all possible" \
-	" keywords are printed. Possible keywords are: @FILE-FORMAT@ and" \
-	" @ALL@." )
+	" @ALL@ is set or no keyword is entered, then all informations are" \
+	" printed. Possible keywords are: @IMAGE-FORMAT@ and @ALL@." )
 
 #:def_cmd( "TEST", "TEST", \
 	"wwt TEST [ignored]...", \
@@ -4885,11 +5347,18 @@
 	" print a table with all error messages." )
 
 #:def_cmd( "COMPR", "COMPR", \
-	"wwt ERROR [error_code]", \
+	"wwt COMPR [error_code]", \
 	"Scan compression modes and print the normalized names. See option" \
 	" {--compression} for syntax details. If no mode is given than print a" \
 	" table with all available compression modes and alternative mode" \
 	" names." )
+
+#:def_cmd( "FEATURES", "FEATURES", \
+	"wwt FEATURES [error_code]", \
+	"Check, if the requested features are available. All keywords are" \
+	" possible. If no keyword is used, all supported features are printed." \
+	" The exit status is 0 for 'all features supported', 1 for 'some" \
+	" features supported' and 2 for 'no feature supported'." )
 
 #:def_cmd( "EXCLUDE", "EXCLUDE", \
 	"wwt EXCLUDE [additional_excludes]...", \
@@ -5016,24 +5485,24 @@
 	"Truncate WBFS partitions to the really used size." )
 
 #:def_cmd( "ADD", "ADD|A", \
-	"wwt ADD [[--source] source]... [--recurse source]...", \
+	"wwt ADD [[--source|--recurse] source]...", \
 	"Add Wii and GameCube ISO discs to WBFS partitions. Images, WBFS" \
 	" partitions and directories are accepted as source." )
 
 #:def_cmd( "UPDATE", "UPDATE|U", \
-	"wwt UPDATE [[--source] source]... [--recurse source]...", \
+	"wwt UPDATE [[--source|--recurse] source]...", \
 	"Add missing Wii and GameCube ISO discs to WBFS partitions. Images," \
 	" WBFS partitions and directories are accepted as source. 'UPDATE' is" \
 	" a shortcut for {ADD --update}." )
 
 #:def_cmd( "NEW", "NEW|N", \
-	"wwt NEW [[--source] source]... [--recurse source]...", \
+	"wwt NEW [[--source|--recurse] source]...", \
 	"Add missing and newer Wii and GameCube ISO discs to WBFS partitions." \
 	" Images, WBFS partitions and directories are accepted as source." \
 	" 'NEW' is a shortcut for {ADD --update --newer}." )
 
 #:def_cmd( "SYNC", "SYNC", \
-	"wwt SYNC [[--source] source]... [--recurse source]...", \
+	"wwt SYNC [[--source|--recurse] source]...", \
 	"Modify primary WBFS (REMOVE and ADD) until it contains exactly the" \
 	" same discs as all sources together. Images, WBFS partitions and" \
 	" directories are accepted as source. 'SYNC' is a shortcut for {ADD" \
@@ -5062,8 +5531,9 @@
 	"Remove discs from WBFS partitions." )
 
 #:def_cmd( "RENAME", "RENAME|REN", \
-	"wwt RENAME id6=[new][,title]...", \
-	"Rename the ID6 of WBFS discs. Disc title can also be set." )
+	"wwt RENAME SELECTOR=[new_id6][,new_title]...\n" \
+	"SELECTOR := ID6 | '#'SLOT | INDEX", \
+	"Rename the ID6 and/or the disc title of WBFS discs." )
 
 #:def_cmd( "SETTITLE", "SETTITLE|ST", \
 	"wwt SETTITLE id6=title...", \
@@ -5075,7 +5545,7 @@
 
 #:def_cmd( "VERIFY", "VERIFY|V", \
 	"wwt VERIFY [id6]...", \
-	"Verify all discs of WBFS (calculate and compare SHA1 check sums) to" \
+	"Verify all discs of WBFS (calculate and compare SHA1 checksums) to" \
 	" find bad dumps." )
 
 #:def_cmd( "SKELETON", "SKELETON|SKEL", \
@@ -5119,7 +5589,9 @@
 
 #:def_opt( "PROGRESS", "P|progress", "G", \
 	"", \
-	"Print progress counter independent of verbose level." )
+	"Print progress counter. If --verbose is set at least twice, printing" \
+	" is enabled too. If progress is enabled, the default of --dsync is" \
+	" changed." )
 
 #:def_opt( "SCAN_PROGRESS", "scan-progress|scanprogress", "G", \
 	"", \
@@ -5136,6 +5608,29 @@
 	" default is '%'. For Windows (CYGWIN) it is a good choice to set" \
 	" @'-E$$'@ to avoid conflicts with command shell variables." )
 
+#:def_opt( "COLOR", "color", "GO", \
+	"[=modus]", \
+	"Define the modus for colored text output. Allowed keywords are: @OFF@" \
+	" or @NO-COLORS@ to disable colors, @AUTO@ (default) for automatic" \
+	" detection, @ON@ for automatic detection but never @OFF@, @8-COLORS@" \
+	" and @256-COLORS@ for 8 and 256 color support. Without parameter," \
+	" @ON@ is used.\n" \
+	"  @AUTO@ will enable colorized output only for terminals. @AUTO@ and" \
+	" @ON@ use environment variable @TERM@ to find the correct color" \
+	" modus.\n" \
+	"  If a command is prefixed by @'C-'@, then @--color=ON@ is used" \
+	" implicitly as default." )
+
+#:def_opt( "COLOR_256", "256-colors|256colors", "G", \
+	"", \
+	"Short cut for {--color=256-colors}: Force colorized text with 256" \
+	" color support." )
+
+#:def_opt( "NO_COLOR", "no-colors|nocolors", "G", \
+	"", \
+	"Short cut for {--color=off}: Deactivate colorized text. This is the" \
+	" default, if an output file is not a terminal." )
+
 #:def_opt( "IO", "io", "GP", \
 	"flags", \
 	"Setup the IO mode for experiments. The standard file IO is based on" \
@@ -5143,9 +5638,22 @@
 	" fopen() function. The value '2' defines the same for ISO files and" \
 	" value '4' for WIA files. You can combine the values by adding them." )
 
+#:def_opt( "DSYNC", "dsync", "GO", \
+	"[=mode]", \
+	"This option enables the usage of flag O_DSYNC when opening a" \
+	" partition at a hard drive for writing. With activated flag, writing" \
+	" an image is some percent slower, but the progress counters are exact" \
+	" again.\n" \
+	"  Parameter MODE is optional. If set, it is one of OFF (disable), ON" \
+	" (enable) or AUTO (default). With AUTO, DSYNC is enabled if the" \
+	" progress counters are active.\n" \
+	"  This option has only impact, if compiler and operation system" \
+	" support the flag O_DSYNC. Linux does." )
+
 #:def_opt( "TITLES", "T|titles", "GMP", \
 	"file", \
-	"Read file for disc titles. -T0 disables titles lookup." )
+	"Read file for disc titles. @-T/@ disables automatic search for title" \
+	" files." )
 
 #:def_opt( "UTF_8", "utf-8|utf8", "G", \
 	"", \
@@ -5411,8 +5919,8 @@
 #:def_opt( "TT_ID", "tt-id|ttid", "CP", \
 	"id", \
 	"This is a short cut for {--ticket id --tmd id}. If TICKET and TMD" \
-	" differ, the game will freeze after loading. So it make sense to" \
-	" change only TICKET and TMD IDs together." )
+	" differ, the game will freeze after loading. So it makes only sense" \
+	" to change TICKET and TMD IDs together." )
 
 #:def_opt( "WBFS_ID", "wbfs-id|wbfsid", "CP", \
 	"id", \
@@ -5441,6 +5949,26 @@
 	" within TMD. The format is @'HIGH:LOW'@ or @'HIGH-LOW'@ or @'LOW'@." \
 	" If only @LOW@ is set than @HIGH@ is assumed as 1 (standard IOS)." )
 
+#:def_opt( "HTTP", "http", "C", \
+	"", \
+	"This $patching$ option replaces 'https' request to 'http' in the" \
+	" files 'main.dol' and 'rel/StaticR.rel', if the files exist. It also" \
+	" replaces the sub-domain 'naswii' to 'nas'." )
+
+#:def_opt( "DOMAIN", "domain", "CP", \
+	"domain", \
+	"This $patching$ option replaces the domain 'nintendowifi.net' by the" \
+	" new domain. The length of the new domain must not be larger than the" \
+	" old length (16 characters).\n" \
+	"  If the new domain length is not larger than 11, then 'gamespy.com'" \
+	" of 'sake.gamespy.com' is replaced too.  This is a special support" \
+	" for 'Super Smash Bros. Brawl'." )
+
+#:def_opt( "WIIMMFI", "wiimmfi", "C", \
+	"", \
+	"Patch the images for $Wiimmfi$, the new custom server. It is a short" \
+	" cut for {--http --domain wiimmfi.de}." )
+
 #:def_opt( "RM_FILES", "rm-files|rm-file|rmfiles|rmfile", "CP", \
 	"ruleset", \
 	"This patching option defines filter rules to remove real files and" \
@@ -5461,7 +5989,7 @@
 	" the DATA partition. $Fake signing$ is not necessary, but the" \
 	" partition becomes invalid, because the content of some files is not" \
 	" copied. If such file is accessed the Wii will halt immediately," \
-	" because the verification of the check sum calculation fails. The" \
+	" because the verification of the checksum calculation fails. The" \
 	" processing order of file options is: {--rm-files --zero-files" \
 	" --ignore-files}." )
 
@@ -5486,6 +6014,18 @@
 #:def_opt( "DEST2", "D|DEST", "CP", \
 	"path", \
 	"Like {--dest}, but create the directory path automatically." )
+
+#:def_opt( "AUTO_SPLIT", "auto-split|autosplit", "C", \
+	"", \
+	"Enable auto split modus: Split only if necessary and determine the" \
+	" split size automatically.\n" \
+	"  THIS OPTION IS EXPERIMENTAL. In future versions it becomes the" \
+	" default." )
+
+#:def_opt( "NO_SPLIT", "no-split|nosplit", "C", \
+	"", \
+	"Disable output file splitting. This is the default, but in future" \
+	" versions, the new option {--auto-split} becomes the default." )
 
 #:def_opt( "SPLIT", "z|split", "C", \
 	"", \
@@ -5520,7 +6060,8 @@
 
 #:def_opt( "TRUNC", "trunc", "C", \
 	"", \
-	"Truncate a $PLAIN ISO$ images to the needed size while creating." )
+	"Truncate $PLAIN ISO$ and $WBFS$ images after creating or copying to" \
+	" the minimal needed size with respect to the block size." )
 
 #:def_opt( "CHUNK_MODE", "chunk-mode|chunkmode|chm", "CP", \
 	"mode", \
@@ -5677,31 +6218,75 @@
 	"Remove source files/discs if operation is successful. If the source" \
 	" is an extracted file systems (FST) it isn't removed." )
 
-#:def_opt( "WDF", "W|wdf", "C", \
-	"", \
-	"Set ISO output file type to WDF (Wii Disc Format, default)" )
+#:def_opt( "WDF", "W|wdf", "CO", \
+	"[=param]", \
+	"Set the image output file type to WDF (Wii Disc Format). The output" \
+	" format is either WDFv1 or WDFv2. It depends of the input file format" \
+	" and of the aligning. {--wdf=param} is a short cut for {--wdf" \
+	" --align-wdf=param}." )
+
+#:def_opt( "WDF1", "wdf1", "CO", \
+	"[=param]", \
+	"Set image output file type to WDF and force version 1. {--wdf1=param}" \
+	" is a short cut for {--wdf1 --align-wdf=param}." )
+
+#:def_opt( "WDF2", "wdf2", "CO", \
+	"[=param]", \
+	"Set image output file type to WDF and force version 2. {--wdf2=param}" \
+	" is a short cut for {--wdf2 --align-wdf=param}." )
+
+#:def_opt( "ALIGN_WDF", "align-wdf|alignwdf|wdf-align|wdfalign", "GP", \
+	"[align][,minhole]", \
+	"Parameter @align@ defines the aligning factor for new WDF images. It" \
+	" must be a power of 2 and smaller or equal than 1 GiB. The default" \
+	" WDF alignment is 1 for WDF v1 and 4 for WDF v2. Usual values are 1," \
+	" 512, 4K and 32K.\n" \
+	"  The optional parameter @minhole@ defines the minimal hole size," \
+	" before a new chunk is created. If NULL, an internal value is used to" \
+	" minimize the total file size. @minhole@ can't be smaller than" \
+	" @align@." )
 
 #:def_opt( "WIA", "wia", "CO", \
 	"[=compr]", \
-	"Set ISO output file type to WIA (Wii ISO Archive). The optional" \
+	"Set image output file type to WIA (Wii ISO Archive). The optional" \
 	" parameter is a compression mode and {--wia=mode} is a shortcut for" \
 	" {--wia --compression mode}." )
 
+#:def_opt( "GCZ", "gcz", "C", \
+	"", \
+	"Set image output file type to GCZ (Dolphins GameCube Zip)." )
+
+#:def_opt( "GCZ_ZIP", "gcz-zip|gczzip|gczip", "C", \
+	"", \
+	"If creating a GCZ image, a blockwise z-compression is tried. If the" \
+	" compressed data is larger than 98.5%, the uncompressed data is" \
+	" stored. Encrypted blocks are stored directly as uncompressed data," \
+	" because the 98.5% test fails all the time.\n" \
+	"  Option --gcz-zip disables this optimization for encrypted data and" \
+	" makes the creation process slower." )
+
+#:def_opt( "GCZ_BLOCK", "gcz-block|gczblock", "GP", \
+	"size", \
+	"The value defines the block size, if creating a GCZ image. The" \
+	" default is 16K (also Dolphins default). Smaller values enlarge the" \
+	" managment data and reduce the compression ratio. Use the option with" \
+	" caution!" )
+
 #:def_opt( "ISO", "I|iso", "C", \
 	"", \
-	"Set ISO output file type to PLAIN ISO." )
+	"Set image output file type to PLAIN ISO." )
 
 #:def_opt( "CISO", "C|ciso", "C", \
 	"", \
-	"Set ISO output file type to CISO (Compact ISO, same as WBI)." )
+	"Set image output file type to CISO (Compact ISO, same as WBI)." )
 
 #:def_opt( "WBFS", "B|wbfs", "C", \
 	"", \
-	"Set ISO output file type to WBFS (Wii Backup File System) container." )
+	"Set image output file type to WBFS (Wii Backup File System, default)." )
 
 #:def_opt( "FST", "fst", "CO", \
 	"", \
-	"Set ISO output mode to 'file system' (extracted ISO)." )
+	"Set image output mode to 'file system' (extracted ISO)." )
 
 #:def_opt( "FILES", "files", "CO", \
 	"ruleset", \
@@ -5833,6 +6418,11 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "INFO", "LONG", \
+	"", \
+	"Print additional infos, if available. For @IMAGE-FORMAT@: Print a" \
+	" list, that explains the attributes." )
+
 #:def_cmd_opt( "ERROR", "SECTIONS", \
 	"", \
 	"" )
@@ -5866,6 +6456,16 @@
 #:def_cmd_opt( "COMPR", "NUMERIC", \
 	"", \
 	"" )
+
+#:def_cmd_opt( "FEATURES", "QUIET", \
+	"", \
+	"If set, suppress messages about the single features. If set twice," \
+	" suppress also the summary message." )
+
+#:def_cmd_opt( "FEATURES", "VERBOSE", \
+	"", \
+	"Normally, a status line for each supported feature is printed. If" \
+	" set, print an info line for each requested feature." )
 
 #:def_cmd_opt( "EXCLUDE", "EXCLUDE", \
 	"", \
@@ -7015,6 +7615,10 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "CHECK", "SECTIONS", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "CHECK", "QUIET", \
 	"", \
 	"" )
@@ -7070,6 +7674,10 @@
 	"" )
 
 #:def_cmd_opt( "REPAIR", "PART", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "REPAIR", "SECTIONS", \
 	"", \
 	"" )
 
@@ -7353,6 +7961,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "ADD", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ADD", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "ADD", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "ADD", "RM_FILES", \
 	"", \
 	"" )
@@ -7587,6 +8207,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "UPDATE", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "UPDATE", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "UPDATE", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "UPDATE", "RM_FILES", \
 	"", \
 	"" )
@@ -7810,6 +8442,18 @@
 	"" )
 
 #:def_cmd_opt( "NEW", "IOS", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "NEW", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "NEW", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "NEW", "WIIMMFI", \
 	"", \
 	"" )
 
@@ -8039,6 +8683,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "SYNC", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SYNC", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SYNC", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "SYNC", "RM_FILES", \
 	"", \
 	"" )
@@ -8243,6 +8899,14 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "EXTRACT", "AUTO_SPLIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "NO_SPLIT", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "EXTRACT", "SPLIT", \
 	"", \
 	"" )
@@ -8327,6 +8991,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "EXTRACT", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "WIIMMFI", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "EXTRACT", "RM_FILES", \
 	"", \
 	"" )
@@ -8360,6 +9036,18 @@
 	"" )
 
 #:def_cmd_opt( "EXTRACT", "WIA", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "GCZ", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "GCZ_ZIP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "EXTRACT", "GCZ_BLOCK", \
 	"", \
 	"" )
 
@@ -8555,6 +9243,18 @@
 	"" )
 
 #:def_cmd_opt( "SCRUB", "IOS", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SCRUB", "HTTP", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SCRUB", "DOMAIN", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "SCRUB", "WIIMMFI", \
 	"", \
 	"" )
 
@@ -9200,11 +9900,12 @@
 
 #:def_tool( "wdf", \
 	"wdf [options]... [+command] [options]... files...", \
-	"wdf is a support tool for WDF, WIA and CISO archives. It convert" \
-	" (pack and unpack), compare and dump WDF, WIA (dump and cat only) and" \
-	" CISO archives. The default command depends on the program file name" \
-	" (see command descriptions). Usual names are @wdf@, @unwdf@," \
-	" @wdf-cat@, @wdf-cmp@ and @wdf-dump@ (with or without minus signs).\n" \
+	"wdf is a support tool for WDF, WIA, CISO and GCZ images. It converts" \
+	" (packs and unpacks), compares and dumps WDF and CISO images." \
+	" Additionally it dumps WIA and GCT image and unpacks WIA images. The" \
+	" default command depends on the program file name (see command" \
+	" descriptions). Usual names are @wdf@, @unwdf@, @wdf-cat@, @wdf-cmp@" \
+	" and @wdf-dump@ (with or without minus signs).\n" \
 	"  {wdf +CAT} replaces the old tool @wdf-cat@ and {wdf +DUMP} the old" \
 	" tool @wdf-dump@." )
 
@@ -9219,11 +9920,11 @@
 
 #:def_cmd( "PACK", "+PACK|+P", \
 	"wdf +PACK [option]... files...", \
-	"Pack sources into WDF or CISO archives. This is the general default." )
+	"Pack sources into WDF or CISO images. This is the general default." )
 
 #:def_cmd( "UNPACK", "+UNPACK|+U", \
 	"wdf +UNPACK [option]... files...", \
-	"Unpack WDF, WIA and CISO archives.\n" \
+	"Unpack WDF, WIA and CISO images.\n" \
 	"  This is the default command, when the program name starts with the" \
 	" two letters @'un'@ in any case." )
 
@@ -9242,13 +9943,13 @@
 	"  The standard is to compare two source files. If {--dest} or" \
 	" {--DEST} is set, than all source files are compared against files in" \
 	" the destination path with equal names. If the second source file is" \
-	" missing then standard input (stdin) is used instead.\n" \
+	" missed, then standard input (stdin) is used instead.\n" \
 	"  This is the default command, when the program name contains the sub" \
 	" string @'diff'@ or @'cmp'@ in any case." )
 
 #:def_cmd( "DUMP", "+DUMP|+D", \
 	"wdf +DUMP [option]... files...", \
-	"Dump the data structure of WDF, WIA and CISO archives and ignore" \
+	"Dump the data structure of WDF, WIA, CISO and GCZ images and ignore" \
 	" other files.\n" \
 	"  This is the default command, when the program contains the sub" \
 	" string @'dump'@ in any case. {wdf +DUMP} replaces the old tool" \
@@ -9285,12 +9986,47 @@
 	"This debug option enables the logging of internal memory maps. If set" \
 	" twice second level memory maps are printed too." )
 
+#:def_opt( "COLOR", "color", "GO", \
+	"[=modus]", \
+	"Define the modus for colored text output. Allowed keywords are: @OFF@" \
+	" or @NO-COLORS@ to disable colors, @AUTO@ (default) for automatic" \
+	" detection, @ON@ for automatic detection but never @OFF@, @8-COLORS@" \
+	" and @256-COLORS@ for 8 and 256 color support. Without parameter," \
+	" @ON@ is used.\n" \
+	"  @AUTO@ will enable colorized output only for terminals. @AUTO@ and" \
+	" @ON@ use environment variable @TERM@ to find the correct color" \
+	" modus.\n" \
+	"  If a command is prefixed by @'C-'@, then @--color=ON@ is used" \
+	" implicitly as default." )
+
+#:def_opt( "COLOR_256", "256-colors|256colors", "G", \
+	"", \
+	"Short cut for {--color=256-colors}: Force colorized text with 256" \
+	" color support." )
+
+#:def_opt( "NO_COLOR", "no-colors|nocolors", "G", \
+	"", \
+	"Short cut for {--color=off}: Deactivate colorized text. This is the" \
+	" default, if an output file is not a terminal." )
+
 #:def_opt( "IO", "io", "GP", \
 	"flags", \
 	"Setup the IO mode for experiments. The standard file IO is based on" \
 	" open() function. The value '1' defines that WBFS IO is based on" \
 	" fopen() function. The value '2' defines the same for ISO files and" \
 	" value '4' for WIA files. You can combine the values by adding them." )
+
+#:def_opt( "DSYNC", "dsync", "GO", \
+	"[=mode]", \
+	"This option enables the usage of flag O_DSYNC when opening a" \
+	" partition at a hard drive for writing. With activated flag, writing" \
+	" an image is some percent slower, but the progress counters are exact" \
+	" again.\n" \
+	"  Parameter MODE is optional. If set, it is one of OFF (disable), ON" \
+	" (enable) or AUTO (default). With AUTO, DSYNC is enabled if the" \
+	" progress counters are active.\n" \
+	"  This option has only impact, if compiler and operation system" \
+	" support the flag O_DSYNC. Linux does." )
 
 #:def_opt( "CHUNK", "chunk", "C", \
 	"", \
@@ -9326,10 +10062,34 @@
 	" default value is @32K@ (Wii sector size). This option is ignored in" \
 	" quiet mode." )
 
-#:def_opt( "WDF", "W|wdf", "C", \
-	"", \
+#:def_opt( "WDF", "W|wdf", "CO", \
+	"[=param]", \
 	"Force WDF output mode if packing and set the default suffix to" \
-	" @'.wdf'@. This is the general default." )
+	" @'.wdf'@. This is the general default. {--wdf=param} is a short cut" \
+	" for {--wdf --align-wdf=param}." )
+
+#:def_opt( "WDF1", "wdf1", "CO", \
+	"[=param]", \
+	"Force WDF v1 output mode, if packing. Set the default suffix to" \
+	" @'.wdf'@. {--wdf1=param} is a short cut for {--wdf1" \
+	" --align-wdf=param}." )
+
+#:def_opt( "WDF2", "wdf2", "CO", \
+	"[=param]", \
+	"Force WDF v2 output mode, if packing. Set the default suffix to" \
+	" @'.wdf'@. {--wdf2=param} is a short cut for {--wdf2" \
+	" --align-wdf=param}." )
+
+#:def_opt( "ALIGN_WDF", "align-wdf|alignwdf|wdf-align|wdfalign", "GP", \
+	"[align][,minhole]", \
+	"Parameter @align@ defines the aligning factor for new WDF images. It" \
+	" must be a power of 2 and smaller or equal than 1 GiB. The default" \
+	" WDF alignment is 1 for WDF v1 and 4 for WDF v2. Usual values are 1," \
+	" 512, 4K and 32K.\n" \
+	"  The optional parameter @minhole@ defines the minimal hole size," \
+	" before a new chunk is created. If NULL, an internal value is used to" \
+	" minimize the total file size. @minhole@ can't be smaller than" \
+	" @align@." )
 
 #:def_opt( "WIA", "wia", "CO", \
 	"[=compr]", \
@@ -9385,6 +10145,18 @@
 	"", \
 	"Preserve file times (atime+mtime) while copying an image. This option" \
 	" is enabled by default if an unmodified disc image is copied." )
+
+#:def_opt( "AUTO_SPLIT", "auto-split|autosplit", "C", \
+	"", \
+	"Enable auto split modus: Split only if necessary and determine the" \
+	" split size automatically.\n" \
+	"  THIS OPTION IS EXPERIMENTAL. In future versions it becomes the" \
+	" default." )
+
+#:def_opt( "NO_SPLIT", "no-split|nosplit", "C", \
+	"", \
+	"Disable output file splitting. This is the default, but in future" \
+	" versions, the new option {--auto-split} becomes the default." )
 
 #:def_opt( "SPLIT", "z|split", "C", \
 	"", \
@@ -9510,6 +10282,14 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "PACK", "AUTO_SPLIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "PACK", "NO_SPLIT", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "PACK", "SPLIT", \
 	"", \
 	"" )
@@ -9558,6 +10338,18 @@
 	"", \
 	"" )
 
+#:def_cmd_opt( "PACK", "WDF1", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "PACK", "WDF2", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "PACK", "ALIGN_WDF", \
+	"", \
+	"" )
+
 #:def_cmd_opt( "PACK", "WIA", \
 	"", \
 	"" )
@@ -9583,6 +10375,14 @@
 	"" )
 
 #:def_cmd_opt( "UNPACK", "OVERWRITE", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "UNPACK", "AUTO_SPLIT", \
+	"", \
+	"" )
+
+#:def_cmd_opt( "UNPACK", "NO_SPLIT", \
 	"", \
 	"" )
 

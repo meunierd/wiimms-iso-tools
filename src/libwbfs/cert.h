@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -322,11 +322,6 @@ typedef enum Base64Mode_t
 
 ///////////////////////////////////////////////////////////////////////////////
 
-extern const char TableEncode64[64];
-extern const char TableDecode64[256];
-
-///////////////////////////////////////////////////////////////////////////////
-
 uint CalcEncode64len
 (
     // returns the needed buflen inclusive 0-Term
@@ -338,10 +333,11 @@ uint CalcEncode64len
 );
 
 //-----------------------------------------------------------------------------
+// [[dclib]]
 
 int Encode64buf
 (
-    // returns -1 if dest buffer is to small
+    // returns -1 if dest buffer is too small
     // otherwise it returns the number of written characters
 
     char	*buf,			// valid destination buffer
@@ -353,6 +349,7 @@ int Encode64buf
 );
 
 //-----------------------------------------------------------------------------
+// [[dclib]]
 
 char * Encode64
 (

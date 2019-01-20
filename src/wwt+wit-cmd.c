@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -55,7 +55,7 @@ enumError cmd_error()
 	    int i;
 	    for ( i=0; i<ERR__N; i++ )
 		printf("\n[error-%02u]\ncode=%u\nname=%s\ntext=%s\n",
-			i, i, GetErrorName(i), GetErrorText(i));
+			i, i, GetErrorName(i,"?"), GetErrorText(i,"?") );
 	}
 	else
 	{
@@ -72,14 +72,15 @@ enumError cmd_error()
 	    int max_wd = 0;
 	    for ( i=0; i<ERR__N; i++ )
 	    {
-		const int len = strlen(GetErrorName(i));
+		const int len = strlen(GetErrorName(i,"?"));
 		if ( max_wd < len )
 		    max_wd = len;
 	    }
 
 	    // print table
 	    for ( i=0; i<ERR__N; i++ )
-		printf("%3d : %-*s : %s\n",i,max_wd,GetErrorName(i),GetErrorText(i));
+		printf("%3d : %-*s : %s\n",
+			i, max_wd,GetErrorName(i,"?"), GetErrorText(i,"?") );
 
 	    if (print_header)
 		printf("\n");
@@ -101,11 +102,11 @@ enumError cmd_error()
 
     if (print_sections)
 	printf("\n[error]\ncode=%lu\nname=%s\ntext=%s\n",
-		num, GetErrorName(num), GetErrorText(num));
+		num, GetErrorName(num,"?"), GetErrorText(num,"?"));
     else if (long_count)
-	printf("%s\n",GetErrorText(num));
+	printf("%s\n",GetErrorText(num,"?"));
     else
-	printf("%s\n",GetErrorName(num));
+	printf("%s\n",GetErrorName(num,"?"));
     return stat;
 }
 
@@ -309,6 +310,187 @@ enumError cmd_compr()
 
 //
 ///////////////////////////////////////////////////////////////////////////////
+///////////////			    cmd_features()		///////////////
+///////////////////////////////////////////////////////////////////////////////
+
+enum
+{
+    //--- image formats
+
+    FEAT_ISO,
+    FEAT_WDF,
+    FEAT_WDF1,
+    FEAT_WDF2,
+    FEAT_CISO,
+    FEAT_WBFS,
+    FEAT_WIA,
+    FEAT_GCZ,
+
+    //--- misc
+
+    FEAT_PRALLOC,
+    
+    //--- all
+
+    FEAT__ALL
+};
+
+//-----------------------------------------------------------------------------
+
+static const KeywordTab_t feature_tab[] =
+{
+    //--- image formats
+
+    { FEAT_ISO,		"ISO",		0,		0 },
+    { FEAT_WDF,		"WDF",		0,		0 },
+    { FEAT_WDF1,	"WDF1",		"WDFV1",	0 },
+    { FEAT_WDF2,	"WDF2",		"WDFV2",	0 },
+    { FEAT_CISO,	"CISO",		"WBI",		0 },
+    { FEAT_WBFS,	"WBFS",		0,		0 },
+    { FEAT_WIA,		"WIA",		0,		0 },
+    { FEAT_GCZ,		"GCZ",		0,		0 },
+
+    //--- misc
+
+    { FEAT_PRALLOC,	"PRALLOC",	0, 0 },
+
+    //--- all
+
+    { FEAT__ALL,	"ALL",		0, 1 },
+    { 0,0,0,0 }
+};
+
+//-----------------------------------------------------------------------------
+
+static bool check_feature ( uint feat )
+{
+    bool stat = false;
+    ccp  msg = 0;
+
+    switch (feat)
+    {
+	case FEAT_ISO:		stat = 1; msg = "Image format ISO"; break;
+	case FEAT_WDF:		stat = 1; msg = "Image format WDF"; break;
+	case FEAT_WDF1:		stat = 1; msg = "Image format WDF v1"; break;
+	case FEAT_WDF2:		stat = 1; msg = "Image format WDF v2"; break;
+	case FEAT_CISO:		stat = 1; msg = "Image format CISO"; break;
+	case FEAT_WBFS:		stat = 1; msg = "Image format WBFS"; break;
+	case FEAT_WIA:		stat = 1; msg = "Image format WIA"; break;
+
+     #if HAVE_ZLIB
+	case FEAT_GCZ:		stat = 1; msg = "Image format GCZ"; break;
+     #else
+	case FEAT_GCZ:		stat = 0; msg = "Image format GCZ"; break;
+     #endif
+
+     #if NO_PREALLOC
+	case FEAT_PRALLOC:	stat = 0; msg = "File pre allocation"; break;
+     #else
+	case FEAT_PRALLOC:	stat = 1; msg = "File pre allocation"; break;
+     #endif
+    }
+
+    if ( msg && verbose >= 0 && ( verbose > 0 || stat ))
+    {
+	const KeywordTab_t *cmd;
+	for ( cmd = feature_tab; cmd->name1; cmd++ )
+	if ( cmd->id == feat )
+	{
+	    if (stat)
+		printf("+ %-7s : %s is supported.\n",cmd->name1,msg);
+	    else
+		printf("- %-7s : %s is not supported.\n",cmd->name1,msg);
+	}
+    }
+    return stat;
+}
+
+//-----------------------------------------------------------------------------
+
+static void check_all_features ( uint *n_supported, uint *n_total )
+{
+    DASSERT(n_supported);
+    DASSERT(n_total);
+
+    uint feat;
+    for ( feat = 0; feat < FEAT__ALL; feat++ )
+    {
+	(*n_total)++;
+	    if (check_feature(feat))
+		(*n_supported)++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+enumError cmd_features()
+{
+    uint n_supported = 0, n_total = 0;
+    
+    ParamList_t * param;
+    for (  param = first_param; param; param = param->next )
+    {
+	ccp arg = param->arg;
+	if ( !arg || !*arg )
+	    continue;
+
+	int cmd_stat;
+	const KeywordTab_t * cmd = ScanKeyword(&cmd_stat,arg,feature_tab);
+	if ( !cmd || cmd_stat )
+	{
+	    n_total++;
+	    if ( verbose > 0 )
+		printf("? Unknown feature: %s.\n",arg);
+	    continue;
+	}
+
+	if ( cmd->id == FEAT__ALL )
+	    check_all_features(&n_supported,&n_total);
+	else
+	{
+	    n_total++;
+	    if (check_feature(cmd->id))
+		n_supported++;
+	}
+    }
+
+    if (!n_total)
+	check_all_features(&n_supported,&n_total);
+
+    if ( n_supported == n_total )
+    {
+	if ( verbose >= -1 )
+	{
+	    if ( n_total == 1 )
+		printf("> Exit status 0: The requested features is supported.\n");
+	    else
+		printf("> Exit status 0: All %u requested features are supported.\n",
+			n_total);
+	}
+	return 0;
+    }
+
+    if ( !n_supported )
+    {
+	if ( verbose >= -1 )
+	{
+	    if ( n_total == 1 )
+		printf("> Exit status 2: The requested features is not supported.\n");
+	    else
+		printf("> Exit status 2: All %u requested features are not supported.\n",
+			n_total);
+	}
+	return 2;
+    }
+
+    if ( verbose >= -1 )
+	printf("> Exit status 1: %u of %u requested features are supported.\n",
+		    n_supported, n_total );
+    return 1;
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
 ///////////////			    cmd_exclude()		///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -371,43 +553,61 @@ enumError cmd_test_options()
     print_val( "hd sec-size:",	opt_hss, 0);
     print_val( "wb sec-size:",	opt_wss, 0);
     print_val( "repair-mode:",	repair_mode, 0);
- #else
+ #elif defined(TEST)
     u64 opt_size = 0;
  #endif
 
-    *iobuf = 0;
-    if (output_file_type)
-	snprintf(iobuf,sizeof(iobuf)," = %s",oft_info[output_file_type].name);
+    snprintf(iobuf,sizeof(iobuf)," = %s",oft_info[output_file_type].name);
     print_val( "output-mode:",	output_file_type, iobuf );
 
- #if WDF2_ENABLED
-    print_val( "wdf-version:",	opt_wdf_version, 0 );
-    print_val( "wdf-align:",	opt_wdf_align, 0 );
- #endif
+    SetupOptionsWDF();
+    if ( opt_wdf_version || opt_wdf_align || opt_wdf_min_holesize )
+    {
+	if ( use_wdf_version != opt_wdf_version )
+	    snprintf(iobuf,sizeof(iobuf)," => use v%d",use_wdf_version);
+	else
+	    *iobuf = 0;
+	print_val( "wdf-version:",	opt_wdf_version, iobuf );
+
+	if ( use_wdf_align != opt_wdf_align )
+	    snprintf(iobuf,sizeof(iobuf)," => use %x (%s)",
+		use_wdf_align, wd_print_size_1024(0,0,use_wdf_align,false) );
+	else
+	    *iobuf = 0;
+	print_val( "align-wdf:",	opt_wdf_align, iobuf );
+
+	print_val( "minhole-wdf",	opt_wdf_min_holesize, 0 );
+    }
 
     print_val( "chunk-mode:",	opt_chunk_mode,	0 );
     print_val( "chunk-size:",	opt_chunk_size,	force_chunk_size ? " FORCE!" : "" );
     print_val( "max-chunks:",	opt_max_chunks,	0 );
+
+ #ifdef TEST
     {
 	u64 filesize[] = { 100ull*MiB, 1ull*GiB, 10ull*GiB, opt_size, 0 };
-	u64 *fs_ptr = filesize;	for (;;)
+	u64 *fs_ptr = filesize;
+	for (;;)
 	{
 	    u32 n_blocks;
 	    u32 block_size = CalcBlockSizeCISO(&n_blocks,*fs_ptr);
-	    printf("    size->CISO %16llx = %12lld -> %5u * %8x/hex == %12llx/hex\n",
+	    printf("   CISO block size %12llx = %12lld -> %5u * %8x/hex == %12llx/hex\n",
 			*fs_ptr, *fs_ptr, n_blocks, block_size,
 			(u64)block_size * n_blocks );
-	    if (!*fs_ptr++)
+	    if (!*++fs_ptr)
 		break;
 	}
     }
+ #endif
 
+    printf("  auto-split:  %16x = %12d\n",opt_auto_split,opt_auto_split);
+    printf("  split:       %16x = %12d\n",opt_split,opt_split);
     print_val( "split-size:",	opt_split_size, 0 );
     printf("  compression: %16x = %12d = %s (level=%d)\n",
 		opt_compr_method, opt_compr_method,
 		wd_get_compression_name(opt_compr_method,"?"), opt_compr_level );
-    printf("    level:     %16x = %12d\n",opt_compr_level,opt_compr_level);
-    print_val( "  chunk-size:",	opt_compr_chunk_size, 0 );
+    printf("   level:      %16x = %12d\n",opt_compr_level,opt_compr_level);
+    print_val( " chunk-size:",	opt_compr_chunk_size, 0 );
 
     print_val( "mem:",		opt_mem, 0 );
     GetMemLimit();
@@ -424,6 +624,7 @@ enumError cmd_test_options()
     printf("  file-limit:  %16x = %12d\n",opt_file_limit,opt_file_limit);
     printf("  block-size:  %16x = %12d\n",opt_block_size,opt_block_size);
  #endif
+    printf("  gcz-block:   %16x = %12d\n",opt_gcz_block_size,opt_gcz_block_size);
     printf("  rdepth:      %16x = %12d\n",opt_recurse_depth,opt_recurse_depth);
     printf("  enc:         %16x = %12d\n",encoding,encoding);
     printf("  region:      %16x = %12d\n",opt_region,opt_region);
@@ -455,6 +656,12 @@ enumError cmd_test_options()
     if (modify_wbfs_id)
 	printf("  modify wbfs id:   '%s'\n",modify_wbfs_id);
 
+    if ( opt_http || opt_domain )
+    {
+	printf("  http:             %s\n", opt_http ? "enabled" : "disabled" );
+	printf("  domain:           '%s'\n",opt_domain);
+    }
+
  #if IS_WWT
     char buf_set_time[20];
     if (opt_set_time)
@@ -482,17 +689,18 @@ enumError cmd_test_options()
 
 //
 ///////////////////////////////////////////////////////////////////////////////
-///////////////			PrintErrorStat()		///////////////
+///////////////			PrintErrorStatWit()		///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-enumError PrintErrorStat ( enumError err, ccp cmdname )
+enumError PrintErrorStatWit ( enumError err, ccp cmdname )
 {
     if ( print_sections )
     {
 	putchar('\n');
 	if ( err )
 	    printf("[error]\nprogram=%s\ncommand=%s\ncode=%u\nname=%s\ntext=%s\n\n",
-			progname, cmdname, err, GetErrorName(err), GetErrorText(err) );
+			progname, cmdname, err,
+			GetErrorName(err,"?"), GetErrorText(err,"?") );
     }
 
     if (   verbose > 0 && err >= ERR_WARNING
@@ -500,7 +708,7 @@ enumError PrintErrorStat ( enumError err, ccp cmdname )
 	|| err == ERR_NOT_IMPLEMENTED )
     {
 	fprintf(stderr,"%s: Command '%s' returns with status #%d [%s]\n",
-			progname, cmdname, err, GetErrorName(err) );
+			progname, cmdname, err, GetErrorName(err,"?") );
     }
 
     return err;
@@ -511,12 +719,12 @@ enumError PrintErrorStat ( enumError err, ccp cmdname )
 ///////////////			  cmd_info()			///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static void info_file_formats()
+static void info_image_formats()
 {
     if (print_sections)
     {
 	printf(	"\n"
-		"[FILE-FORMAT]\n"
+		"[IMAGE-FORMAT]\n"
 		"n=%u\n",
 		OFT__N - 1);
 
@@ -533,26 +741,27 @@ static void info_file_formats()
 	{
 	    const OFT_info_t * info = oft_info + oft;
 	    printf(	"\n"
-			"[FILE-FORMAT:%s]\n"
+			"[IMAGE-FORMAT:%s]\n"
 			"name=%s\n"
 			"info=%s\n"
 			"option=%s\n"
 			"extensions=%s %s\n"
-			"attributes=%s%s%s%s%s%s%s%s\n"
+			"attributes=%s%s%s%s%s%s%s%s%s\n"
 			,info->name
 			,info->name
 			,info->info
 			,info->option
 			,info->ext1 ? info->ext1 : ""
 			,info->ext2 ? info->ext2 : ""
-			,info->attrib & OFT_A_READ	? "read "   : ""
-			,info->attrib & OFT_A_WRITE	? "write "  : ""
-			,info->attrib & OFT_A_MODIFY	? "modify " : ""
-			,info->attrib & OFT_A_EXTEND	? "extend " : ""
-			,info->attrib & OFT_A_FST	? "fst "    : ""
-			,info->attrib & OFT_A_COMPR	? "compr "  : ""
-			,info->attrib & OFT_A_NOSIZE    ? "nosize " : ""
-			,info->attrib & OFT_A_LOADER	? "loader " : ""
+			,info->attrib & OFT_A_READ	? "read "	: ""
+			,info->attrib & OFT_A_CREATE	? "create "	: ""
+			,info->attrib & OFT_A_MODIFY	? "modify "	: ""
+			,info->attrib & OFT_A_EXTEND	? "extend "	: ""
+			,info->attrib & OFT_A_FST	? "fst "	: ""
+			,info->attrib & OFT_A_COMPR	? "compr "	: ""
+			,info->attrib & OFT_A_NOSIZE    ? "nosize "	: ""
+			,info->attrib & OFT_A_LOADER	? "loader "	: ""
+			,info->attrib & OFT_A_DEST_EDIT	? "destedit "	: ""
 			);
 	}
 	return;
@@ -570,11 +779,11 @@ static void info_file_formats()
     }
 
     printf("\n"
-	   "File formats:\n\n"
-	   "  name  %-*s  option  extensions  attributes\n"
+	   "Image formats:\n\n"
+	   "  Name  %-*s  Option  Extensions  Attributes\n"
 	   " %.*s\n",
-	   info_fw, "description",
-	   info_fw+61, wd_sep_200 );
+	   info_fw, "Description",
+	   info_fw+64, wd_sep_200 );
 
     for ( oft = 1; oft < OFT__N; oft++ )
     {
@@ -584,22 +793,36 @@ static void info_file_formats()
 		i->option ? i->option : "  -",
 		i->ext1 && *i->ext1 ? i->ext1 : " -",
 		i->ext2 && *i->ext2 ? i->ext2 : " -",
-		i->attrib & OFT_A_READ		? "read"   : "-  ",
-		i->attrib & OFT_A_WRITE		? "write"  : "-    ",
+		i->attrib & OFT_A_READ		? "read" : "-   ",
+		i->attrib & OFT_A_CREATE	? "create"  : "-     ",
 		i->attrib & OFT_A_EXTEND	? "extend"
 		: i->attrib & OFT_A_MODIFY	? "modify" : "-     ",
 		i->attrib & OFT_A_FST		? "fst   "
 		: i->attrib & OFT_A_COMPR	? "compr "
 		: i->attrib & OFT_A_NOSIZE	? "nosize" : "-     ",
-		i->attrib & OFT_A_LOADER	? "loader" : "-" );
+		i->attrib & OFT_A_DEST_EDIT	? "destedit"
+		: i->attrib & OFT_A_LOADER	? "loader" : "-" );
     }
+
+    if (long_count)
+	fputs("\n Attributes:\n"
+	    "   read     : Image format can be read.\n"
+	    "   create   : Image format can be created.\n"
+	    "   modify   : Image format can be created and modified.\n"
+	    "   extend   : Image format can be created, modified and extended.\n"
+	    "   fst      : Image is an extracted file system.\n"
+	    "   compr    : Image format supports compressed data (bzip2,7z,zip).\n"
+	    "   nosize   : Info about the image size is not available.\n"
+	    "   destedit : If using as source, the destination must be modifiable.\n"
+	    "   loader   : Image format can be used by USB loaders.\n"
+	    ,stdout);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 enum
 {
-    INFO_FILE_FORMAT	= 0x0001,
+    INFO_IMAGE_FORMAT	= 0x0001,
 
     INFO__ALL		= 0x0001
 };
@@ -608,10 +831,11 @@ enum
 
 enumError cmd_info()
 {
-    static const CommandTab_t cmdtab[] =
+    static const KeywordTab_t cmdtab[] =
     {
-	{ INFO__ALL,		"ALL",		0,		0 },
-	{ INFO_FILE_FORMAT,	"FILE-FORMATS",	"FORMATS",	0 },
+	{ INFO__ALL,		"ALL",			0,			0 },
+	{ INFO_IMAGE_FORMAT,	"IMAGE-FORMATS",	"IMAGEFORMATS",		0 },
+	{ INFO_IMAGE_FORMAT,	"FILE-FORMATS",		"FORMATS",		0 },
 
 	{ 0,0,0,0 }
     };
@@ -624,7 +848,7 @@ enumError cmd_info()
 	if ( !arg || !*arg )
 	    continue;
 
-	const CommandTab_t * cmd = ScanCommand(0,arg,cmdtab);
+	const KeywordTab_t * cmd = ScanKeyword(0,arg,cmdtab);
 	if (!cmd)
 	    return ERROR0(ERR_SYNTAX,"Unknown keyword: %s\n",arg);
 
@@ -639,7 +863,7 @@ enumError cmd_info()
 	printf("\n[INFO]\n");
 
 	ccp text = "infos-avail=";
-	const CommandTab_t * cptr;
+	const KeywordTab_t * cptr;
 	for ( cptr = cmdtab + 1; cptr->name1; cptr++ )
 	{
 	    printf("%s%s",text,cptr->name1);
@@ -659,8 +883,8 @@ enumError cmd_info()
 	putchar('\n');
     }
 
-    if ( keys & INFO_FILE_FORMAT )
-	info_file_formats();
+    if ( keys & INFO_IMAGE_FORMAT )
+	info_image_formats();
 
     putchar('\n');
     return ERR_OK;

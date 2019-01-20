@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -40,6 +40,7 @@
 #include "lib-wdf.h"
 #include "lib-wia.h"
 #include "lib-ciso.h"
+#include "lib-gcz.h"
 #include "libwbfs.h"
 
 //
@@ -71,10 +72,11 @@ typedef enumError (*FlushFunc)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct IOData_t			///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[IOData_t]]
 
 typedef struct IOData_t
 {
-    enumOFT	oft;			// open file mode
+    enumOFT	oft;			// open file type
 
     ReadFunc	read_func;		// read function
     DataBlockFunc data_block_func;	// get next data block
@@ -92,12 +94,13 @@ typedef struct IOData_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct SuperFile_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[SuperFile_t]]
 
 typedef struct SuperFile_t
 {
 	// parameters, set by user
 
-	File_t f;			// file handling struct
+	WFile_t f;			// file handling struct
 	int  indent;			// indent of progress and summary
 	bool show_progress;		// true: show progress info
 	bool show_summary;		// true: show summary statistics
@@ -118,7 +121,7 @@ typedef struct SuperFile_t
 	u32  progress_max_wd;		// max width used for progress output
 	ccp  progress_verb;		// default is "copied"
 	bool progress_summary;		// print summary (delayed) on closing
-	u64  progress_add_total;	// add this value to the total (managment data)
+	u64  progress_add_total;	// add this value to the total (management data)
 
 	u64  progress_last_done;	// last p_done value of PrintProgressSF() call
 	u64  progress_last_total;	// last p_total value of PrintProgressSF() call
@@ -147,10 +150,7 @@ typedef struct SuperFile_t
 
 	// WDF support
 
-	WDF_Head_t   wh;		// the WDF header
-	WDF_Chunk_t *wc;		// field with 'wc_size' elements
-	int wc_size;			// number of elements in 'wc'
-	int wc_used;			// number of used elements in 'wc'
+	wdf_controller_t * wdf;		// WDF controller
 
 	// WIA support
 
@@ -163,8 +163,12 @@ typedef struct SuperFile_t
 	// WBFS support (read only)
 
 	struct WBFS_t * wbfs;		// a WBFS
-	u32 wbfs_fragments;		// 0=unknown, >0:number if fragments
+	u32 wbfs_fragments;		// 0=unknown, >0:number of fragments
 	id6_t wbfs_id6;			// ID6 of wbfs inode
+
+	// GCZ support
+
+	GCZ_t * gcz;			// GCT header
 
 	// FST support
 	
@@ -440,9 +444,9 @@ void PrintProgressChunkSF
 );
 
 // find file type
-enumFileType AnalyzeFT ( File_t * f );
+enumFileType AnalyzeFT ( WFile_t * f );
 enumFileType AnalyzeMemFT ( const void * buf_hd_sect_size, off_t file_size );
-enumError XPrintErrorFT ( XPARM File_t * f, enumFileType err_mask );
+enumError XPrintErrorFT ( XPARM WFile_t * f, enumFileType err_mask );
 
 ccp GetNameFT ( enumFileType ftype, int ignore );
 ccp GetContainerNameFT ( enumFileType ftype, ccp answer_if_no_container );
@@ -512,8 +516,8 @@ enumError CopyRawData2
 enumError CopyWDF	( SuperFile_t * in, SuperFile_t * out );
 enumError CopyWIA	( SuperFile_t * in, SuperFile_t * out );
 enumError CopyWBFSDisc	( SuperFile_t * in, SuperFile_t * out );
-enumError AppendF	(      File_t * in, SuperFile_t * out, off_t in_off, size_t count );
-enumError AppendSparseF	(      File_t * in, SuperFile_t * out, off_t in_off, size_t count );
+enumError AppendF	(      WFile_t * in, SuperFile_t * out, off_t in_off, size_t count );
+enumError AppendSparseF	(      WFile_t * in, SuperFile_t * out, off_t in_off, size_t count );
 enumError AppendSF	( SuperFile_t * in, SuperFile_t * out, off_t in_off, size_t count );
 enumError AppendZeroSF	( SuperFile_t * out, off_t count );
 
@@ -521,6 +525,7 @@ enumError AppendZeroSF	( SuperFile_t * out, off_t count );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			    diff			///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[Diff_t]]
 
 struct WritePatch_t;
 

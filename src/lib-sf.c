@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -42,8 +42,9 @@
 #include <ctype.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <errno.h>
 
-#include "debug.h"
+#include "dclib/dclib-debug.h"
 #include "libwbfs.h"
 #include "lib-sf.h"
 #include "wbfs-interface.h"
@@ -59,8 +60,7 @@ void InitializeSF ( SuperFile_t * sf )
 {
     ASSERT(sf);
     memset(sf,0,sizeof(*sf));
-    InitializeWH(&sf->wh);
-    InitializeFile(&sf->f);
+    InitializeWFile(&sf->f);
     InitializeMemMap(&sf->modified_list);
     ResetSF(sf,0);
 }
@@ -72,11 +72,14 @@ void CleanSF ( SuperFile_t * sf )
 {
     ASSERT(sf);
 
-    if (sf->wc)
-	FREE(sf->wc);
-    sf->wc = 0;
-    sf->wc_size = 0;
-    sf->wc_used = 0;
+    if (sf->wdf)
+    {
+	TRACE("#S# close WDF %s id=%s=%s\n",
+		sf->f.fname, sf->f.id6_src, sf->f.id6_dest );
+	ResetWDF(sf->wdf);
+	FREE(sf->wdf);
+	sf->wdf = 0;
+    }
 
     ResetCISO(&sf->ciso);
 
@@ -96,6 +99,15 @@ void CleanSF ( SuperFile_t * sf )
 	ResetWIA(sf->wia);
 	FREE(sf->wia);
 	sf->wia = 0;
+    }
+
+    if (sf->gcz)
+    {
+	TRACE("#S# close GCZ %s id=%s=%s\n",
+		sf->f.fname, sf->f.id6_src, sf->f.id6_dest );
+	ResetGCZ(sf->gcz);
+	FREE(sf->gcz);
+	sf->gcz = 0;
     }
 
     if (sf->fst)
@@ -137,7 +149,7 @@ static enumError CloseHelperSF
     }
 
     if (remove)
-	err = CloseFile(&sf->f,true);
+	err = CloseWFile(&sf->f,true);
     else
     {
 	if ( sf->f.is_writing && sf->min_file_size )
@@ -148,7 +160,7 @@ static enumError CloseHelperSF
 
 	if ( !err && sf->f.is_writing )
 	{
-	    if (sf->wc)
+	    if (sf->wdf)
 		err = TermWriteWDF(sf);
 
 	    if (sf->ciso.map)
@@ -165,6 +177,9 @@ static enumError CloseHelperSF
 
 	    if (sf->wia)
 		err = TermWriteWIA(sf);
+
+	    if (sf->gcz)
+		err = TermWriteGCZ(sf);
 	}
 
 	if ( err == ERR_OK && remove_sf )
@@ -174,12 +189,12 @@ static enumError CloseHelperSF
 	}
 
 	if ( err != ERR_OK )
-	    CloseFile(&sf->f,true);
+	    CloseWFile(&sf->f,true);
 	else
 	{
-	    err = CloseFile(&sf->f,false);
+	    err = CloseWFile(&sf->f,false);
 	    if (set_time_ref)
-		SetFileTime(&sf->f,set_time_ref);
+		SetWFileTime(&sf->f,set_time_ref);
 	}
     }
 
@@ -223,16 +238,15 @@ enumError Close2SF
 
 enumError ResetSF ( SuperFile_t * sf, FileAttrib_t * set_time_ref )
 {
-    ASSERT(sf);
+    DASSERT(sf);
 
     // free dynamic memory
     enumError err = CloseHelperSF(sf,set_time_ref,false,0);
-    ResetFile(&sf->f,false);
+    ResetWFile(&sf->f,false);
     sf->indent = NormalizeIndent(sf->indent);
 
     // reset data
     SetupIOD(sf,OFT_UNKNOWN,OFT_UNKNOWN);
-    InitializeWH(&sf->wh);
     ResetCISO(&sf->ciso);
     sf->max_virt_off = 0;
     sf->allow_fst = allow_fst;
@@ -329,7 +343,8 @@ enumOFT SetupIOD ( SuperFile_t * sf, enumOFT force, enumOFT def )
 	    sf->iod.flush_func		= FlushFile;		// standard function
 	    break;
 
-	case OFT_WDF:
+	case OFT_WDF1:
+	case OFT_WDF2:
 	    sf->iod.read_func		= ReadWDF;
 	    sf->iod.data_block_func	= DataBlockWDF;
 	    sf->iod.file_map_func	= FileMapWDF;
@@ -347,6 +362,16 @@ enumOFT SetupIOD ( SuperFile_t * sf, enumOFT force, enumOFT def )
 	    sf->iod.write_sparse_func	= WriteSparseWIA;
 	    sf->iod.write_zero_func	= WriteZeroWIA;
 	    sf->iod.flush_func		= FlushWIA;
+	    break;
+
+	case OFT_GCZ:
+	    sf->iod.read_func		= ReadGCZ;
+	    sf->iod.data_block_func	= DataBlockGCZ;
+	    sf->iod.file_map_func	= 0;			// not supported
+	    sf->iod.write_func		= WriteGCZ;
+	    sf->iod.write_sparse_func	= WriteGCZ;		// no special sparse handling
+	    sf->iod.write_zero_func	= WriteZeroGCZ;
+	    sf->iod.flush_func		= FlushGCZ;
 	    break;
 
 	case OFT_CISO:
@@ -423,7 +448,7 @@ enumError SetupReadSF ( SuperFile_t * sf )
 	return ERR_CANT_OPEN;
     }
 
-    if ( sf->f.ftype & FT_A_WDF )
+    if ( sf->f.ftype & FT_M_WDF )
 	return SetupReadWDF(sf);
 
     if ( sf->f.ftype & FT_A_WIA )
@@ -431,6 +456,9 @@ enumError SetupReadSF ( SuperFile_t * sf )
 
     if ( sf->f.ftype & FT_A_CISO )
 	return SetupReadCISO(sf);
+
+    if ( sf->f.ftype & FT_A_GCZ )
+	return SetupReadGCZ(sf);
 
     if ( sf->f.ftype & FT_ID_WBFS && ( sf->f.slot >= 0 || sf->f.id6_src[0] ) )
 	return SetupReadWBFS(sf);
@@ -537,9 +565,9 @@ enumError OpenSF
     const bool disable_errors = sf->f.disable_errors;
     sf->f.disable_errors = true;
     if (open_modify)
-	OpenFileModify(&sf->f,fname,IOM_IS_IMAGE);
+	OpenWFileModify(&sf->f,fname,IOM_IS_IMAGE);
     else
-	OpenFile(&sf->f,fname,IOM_IS_IMAGE);
+	OpenWFile(&sf->f,fname,IOM_IS_IMAGE);
     sf->f.disable_errors = disable_errors;
 
     DefineCachedAreaISO(&sf->f,true);
@@ -564,17 +592,7 @@ enumError CreateSF
     CloseSF(sf,0);
     TRACE("#S# CreateSF(%p,%s,%x,%x,%x)\n",sf,fname,oft,iomode,overwrite);
 
-    if (opt_direct)
-    {
-	switch((int)oft)
-	{
-	    case OFT_WBFS:
-		PRINT("ENABLE allow_direct_io\n");
-		sf->f.allow_direct_io = true;
-	};
-    }
-
-    const enumError err = CreateFile(&sf->f,fname,iomode,overwrite);
+    const enumError err = CreateWFile(&sf->f,fname,iomode,overwrite);
     return err ? err : SetupWriteSF(sf,oft);
 }
 
@@ -666,17 +684,22 @@ enumError SetupWriteSF
 	return ERROR0(ERR_INTERNAL,0);
 
     SetupIOD(sf,oft,OFT__DEFAULT);
+    SetupAutoSplit(&sf->f,sf->iod.oft);
     switch(sf->iod.oft)
     {
 	case OFT_PLAIN:
 	    PreallocateSF(sf,0,0,WII_MAX_SECTORS,1);
 	    return ERR_OK;
 
-	case OFT_WDF:
+	case OFT_WDF1:
+	case OFT_WDF2:
 	    return SetupWriteWDF(sf);
 
 	case OFT_WIA:
 	    return SetupWriteWIA(sf,0);
+
+	case OFT_GCZ:
+	    return SetupWriteGCZ(sf,0);
 
 	case OFT_CISO:
 	    return SetupWriteCISO(sf);
@@ -856,6 +879,8 @@ wd_disc_t * OpenDiscSF
     }
     else
     {
+	reloc |= patch_main(disc);
+
 	if (main_part)
 	{
 	    reloc |= wd_patch_part_id(main_part,modify,
@@ -966,14 +991,14 @@ wd_disc_t * OpenDiscSF
 
 	sf->iod.read_func = ReadDiscWrapper;
 	sf->disc2 = wd_open_disc(WrapperReadSF,sf,file_size,sf->f.fname,opt_force,0);
+	sf->disc2->image_type = oft_info[sf->iod.oft].name;
+	sf->disc2->image_ext  = oft_info[sf->iod.oft].ext1 + 1;
 	if (load_part_data)
 	    wd_load_all_part(sf->disc2,false,false,false);
     }
 
     if (sf->disc2)
     {
-	sf->disc2->image_type = oft_info[sf->iod.oft].name;
-	sf->disc2->image_ext  = oft_info[sf->iod.oft].ext1 + 1;
 	if (!sf->disc2->image_ext)
 	    sf->disc2->image_ext = oft_info[OFT__DEFAULT].ext1 + 1;
 	memcpy(sf->f.id6_dest,&sf->disc2->dhead,6);
@@ -1009,7 +1034,7 @@ void SubstFileNameSF
 	= SubstFileNameBuf(fname,sizeof(fname),fi,dest_arg,fo->f.fname,fo->iod.oft);
     if ( conv_count > 0 )
 	fo->f.create_directory = true;
-    SetFileName(&fo->f,fname,true);
+    SetWFileName(&fo->f,fname,true);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1547,8 +1572,10 @@ enumError ReadSwitchSF
     DASSERT(0); // should never called
     switch(sf->iod.oft)
     {
-	case OFT_WDF:	return ReadWDF(sf,off,buf,count);
+	case OFT_WDF1:
+	case OFT_WDF2:	return ReadWDF(sf,off,buf,count);
 	case OFT_WIA:	return ReadWIA(sf,off,buf,count);
+	case OFT_GCZ:	return ReadGCZ(sf,off,buf,count);
 	case OFT_CISO:	return ReadCISO(sf,off,buf,count);
 	case OFT_WBFS:	return ReadWBFS(sf,off,buf,count);
 	case OFT_FST:	return ReadFST(sf,off,buf,count);
@@ -1566,8 +1593,10 @@ enumError WriteSwitchSF
     switch(sf->iod.oft)
     {
 	case OFT_PLAIN:	return WriteISO(sf,off,buf,count);
-	case OFT_WDF:	return WriteWDF(sf,off,buf,count);
+	case OFT_WDF1:
+	case OFT_WDF2:	return WriteWDF(sf,off,buf,count);
 	case OFT_WIA:	return WriteWIA(sf,off,buf,count);
+	case OFT_GCZ:	return WriteGCZ(sf,off,buf,count);
 	case OFT_CISO:	return WriteCISO(sf,off,buf,count);
 	case OFT_WBFS:	return WriteWBFS(sf,off,buf,count);
 	default:	return ERROR0(ERR_INTERNAL,0);
@@ -1584,8 +1613,10 @@ enumError WriteSparseSwitchSF
     switch(sf->iod.oft)
     {
 	case OFT_PLAIN:	return WriteSparseISO(sf,off,buf,count);
-	case OFT_WDF:	return WriteSparseWDF(sf,off,buf,count);
+	case OFT_WDF1:
+	case OFT_WDF2:	return WriteSparseWDF(sf,off,buf,count);
 	case OFT_WIA:	return WriteSparseWIA(sf,off,buf,count);
+	case OFT_GCZ:	return WriteGCZ(sf,off,buf,count);
 	case OFT_CISO:	return WriteSparseCISO(sf,off,buf,count);
 	case OFT_WBFS:	return WriteWBFS(sf,off,buf,count); // no sparse support
 	default:	return ERROR0(ERR_INTERNAL,0);
@@ -1601,8 +1632,10 @@ enumError WriteZeroSwitchSF ( SuperFile_t * sf, off_t off, size_t count )
     switch(sf->iod.oft)
     {
 	case OFT_PLAIN:	return WriteZeroISO(sf,off,count);
-	case OFT_WDF:	return WriteZeroWDF(sf,off,count);
+	case OFT_WDF1:
+	case OFT_WDF2:	return WriteZeroWDF(sf,off,count);
 	case OFT_WIA:	return WriteZeroWIA(sf,off,count);
+	case OFT_GCZ:	return WriteZeroGCZ(sf,off,count);
 	case OFT_CISO:	return WriteZeroCISO(sf,off,count);
 	case OFT_WBFS:	return WriteZeroWBFS(sf,off,count);
 	default:	return ERROR0(ERR_INTERNAL,0);
@@ -1716,15 +1749,17 @@ enumError FlushFile ( SuperFile_t * sf )
 enumError SetSizeSF ( SuperFile_t * sf, off_t off )
 {
     DASSERT(sf);
-    TRACE("SetSizeSF(%p,%llx) wbfs=%p wc=%p\n",sf,(u64)off,sf->wbfs,sf->wc);
+    TRACE("SetSizeSF(%p,%llx) wbfs=%p wdf=%p\n",sf,(u64)off,sf->wbfs,sf->wdf);
 
     sf->file_size = off;
     switch (sf->iod.oft)
     {
 	case OFT_PLAIN:	return opt_truncate ? ERR_OK : SetSizeF(&sf->f,off);
-	case OFT_WDF:	return ERR_OK;
-	case OFT_WIA:	return ERR_OK;
-	case OFT_CISO:	return ERR_OK;
+	case OFT_WDF1:
+	case OFT_WDF2:
+	case OFT_WIA:
+	case OFT_GCZ:
+	case OFT_CISO:
 	case OFT_WBFS:	return ERR_OK;
 	default:	return ERROR0(ERR_INTERNAL,0);
     };
@@ -1735,8 +1770,8 @@ enumError SetSizeSF ( SuperFile_t * sf, off_t off )
 enumError SetMinSizeSF ( SuperFile_t * sf, off_t off )
 {
     DASSERT(sf);
-    TRACE("SetMinSizeSF(%p,%llx) wbfs=%p wc=%p fsize=%llx\n",
-		sf, (u64)off, sf->wbfs, sf->wc, (u64)sf->file_size );
+    TRACE("SetMinSizeSF(%p,%llx) wbfs=%p wdf=%p fsize=%llx\n",
+		sf, (u64)off, sf->wbfs, sf->wdf, (u64)sf->file_size );
 
     return sf->file_size < off ? SetSizeSF(sf,off) : ERR_OK;
 }
@@ -1746,8 +1781,8 @@ enumError SetMinSizeSF ( SuperFile_t * sf, off_t off )
 enumError MarkMinSizeSF ( SuperFile_t * sf, off_t off )
 {
     DASSERT(sf);
-    TRACE("MarkMinSizeSF(%p,%llx) wbfs=%p wc=%p min_fsize=%llx\n",
-		sf, (u64)off, sf->wbfs, sf->wc, (u64)sf->min_file_size );
+    TRACE("MarkMinSizeSF(%p,%llx) wbfs=%p wdf=%p min_fsize=%llx\n",
+		sf, (u64)off, sf->wbfs, sf->wdf, (u64)sf->min_file_size );
 
     if ( sf->f.seek_allowed )
 	return SetMinSizeSF(sf,off);
@@ -2138,8 +2173,8 @@ void PrintProgressSF ( u64 p_done, u64 p_total, void * param )
 	const u32 eta = elapsed * (u64)max_rate / rate - elapsed;
 
 	char buf1[50], buf2[50];
-	ccp time1 = PrintMSec(buf1,sizeof(buf1),elapsed,sf->show_msec);
-	ccp time2 = PrintMSec(buf2,sizeof(buf2),eta,false);
+	ccp time1 = PrintTimerMSec(buf1,sizeof(buf1),elapsed,sf->show_msec?3:0);
+	ccp time2 = PrintTimerMSec(buf2,sizeof(buf2),eta,0);
 
 	noPRINT("PROGRESS: now=%7u perc=%3u ela=%6u eta=%6u [%s,%s]\n",
 		now, percent, elapsed, eta, time1, time2 );
@@ -2218,7 +2253,7 @@ void PrintSummarySF ( SuperFile_t * sf )
     {
 	const u32 elapsed = GetTimerMSec() - sf->progress_start_time;
 	char timbuf[50];
-	ccp tim = PrintMSec(timbuf,sizeof(timbuf),elapsed,sf->show_msec);
+	ccp tim = PrintTimerMSec(timbuf,sizeof(timbuf),elapsed,sf->show_msec?3:0);
 
 	char ratebuf[50] = {0};
 	u64 total = sf->f.bytes_read + sf->f.bytes_written;
@@ -2331,7 +2366,7 @@ void PrintProgressChunkSF
 ///////////////                     AnalyzeFT()                 ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-enumFileType AnalyzeFT ( File_t * f )
+enumFileType AnalyzeFT ( WFile_t * f )
 {
     ASSERT(f);
 
@@ -2397,12 +2432,12 @@ enumFileType AnalyzeFT ( File_t * f )
 	sf.f.disable_errors = true;
 	if (f->is_writing)
 	{
-	    if (OpenFileModify(&sf.f,fname,IOM_IS_WBFS_PART))
+	    if (OpenWFileModify(&sf.f,fname,IOM_IS_WBFS_PART))
 		return f->ftype;
 	}
 	else
 	{
-	    if (OpenFile(&sf.f,fname,IOM_IS_WBFS_PART))
+	    if (OpenWFile(&sf.f,fname,IOM_IS_WBFS_PART))
 		return f->ftype;
 	}
 
@@ -2462,7 +2497,7 @@ enumFileType AnalyzeFT ( File_t * f )
 	    sf.f.slot = wdisk.slot;
 	    CopyFileAttribDiscInfo(&sf.f.fatt,&wdisk);
 
-	    ResetFile(f,false);
+	    ResetWFile(f,false);
 	    memcpy(f,&sf.f,sizeof(*f));
 	    SetPatchFileID(f,id6,6);
 	    memset(&sf.f,0,sizeof(sf.f));
@@ -2577,34 +2612,26 @@ enumFileType AnalyzeFT ( File_t * f )
 
 	ccp data_ptr = buf1;
 
-	WDF_Head_t wh;
-	ConvertToHostWH(&wh,(WDF_Head_t*)buf1);
+	wdf_header_t wh;
+	ConvertToHostWH(&wh,(wdf_header_t*)buf1);
 
 	err = AnalyzeWH(f,&wh,false);
-	if ( err != ERR_NO_WDF )
-	    ft |= FT_A_WDF;
+	//if ( err != ERR_NO_WDF ) // not sure about the place
+	//    ft |= wh.wdf_version > 1 ? FT_A_WDF2 : FT_A_WDF1;
 
 	if (!err)
 	{
-	    TRACE(" - WDF found -> load first chunk\n");
-	    ft |= FT_A_WDF;
+	    TRACE(" - WDF v%u found -> load first chunk\n",wh.wdf_version);
+	    ft |= wh.wdf_version > 1 ? FT_A_WDF2 : FT_A_WDF1;
 
-	#if WDF2_ENABLED
-	    const WDF_Head_t *wh = (WDF_Head_t*)data_ptr;
-	    data_ptr += wh1->wdf_version == 1
-				? WDF_VERSION1_SIZE
-				: WDF_VERSION2_SIZE;
-	#else
-	    data_ptr += WDF_VERSION1_SIZE;
-	#endif
-
+	    data_ptr += wh.head_size;
 	    if ( f->seek_allowed
-		&& !ReadAtF(f,wh.chunk_off,&buf2,WDF_MAGIC_SIZE+sizeof(WDF_Chunk_t))
+		&& !ReadAtF(f,wh.chunk_off,&buf2,WDF_MAGIC_SIZE+sizeof(wdf1_chunk_t))
 		&& !memcmp(buf2,WDF_MAGIC,WDF_MAGIC_SIZE) )
 	    {
 		TRACE(" - WDF chunk loaded\n");
-		WDF_Chunk_t *wc = (WDF_Chunk_t*)(buf2+WDF_MAGIC_SIZE);
-		ConvertToHostWC(wc,wc);
+		wdf2_chunk_t *wc = (wdf2_chunk_t*)(buf2+WDF_MAGIC_SIZE);
+		ConvertToHostWC(wc,wc,wh.wdf_version,1);
 		if ( wc->data_size >= 6 )
 		{
 		    // save param before clear buffer
@@ -2634,6 +2661,16 @@ enumFileType AnalyzeFT ( File_t * f )
 		    data_ptr = buf2;
 	    }
 	    ResetCISO(&ci);
+	}
+
+	if (IsValidGCZ(data_ptr,sizeof(buf1),f->st.st_size,0))
+	{
+	    ft |= FT_A_GCZ;
+
+	    GCZ_t gcz;
+	    if ( !LoadHeadGCZ(&gcz,f) && !LoadDataGCZ(&gcz,f,0,buf2,sizeof(buf2)) )
+		data_ptr = buf2;
+	    ResetGCZ(&gcz);
 	}
 
 	TRACE("ISO ID6+MAGIC:  \"%c%c%c%c%c%c\"    %02x %02x %02x %02x %02x %02x / %08x\n",
@@ -2690,17 +2727,17 @@ enumFileType AnalyzeFT ( File_t * f )
 		ft |= FT_ID_GC_ISO | FT_A_ISO | FT_A_GC_ISO;
 		SetPatchFileID(f,data_ptr,6);
 		if ( f->st.st_size < ISO_SPLIT_DETECT_SIZE )
-		    SetupSplitFile(f,OFT_PLAIN,0);
+		    SetupSplitWFile(f,OFT_PLAIN,0);
 		break;
 
 	    case FT_ID_WII_ISO:
 		ft |= FT_ID_WII_ISO | FT_A_ISO | FT_A_WII_ISO;
-		if ( !(ft&FT_A_WDF) && !f->seek_allowed )
+		if ( !(ft&FT_M_WDF) && !f->seek_allowed )
 		    DefineCachedAreaISO(f,false);
 
 		SetPatchFileID(f,data_ptr,6);
 		if ( f->st.st_size < ISO_SPLIT_DETECT_SIZE )
-		    SetupSplitFile(f,OFT_PLAIN,0);
+		    SetupSplitWFile(f,OFT_PLAIN,0);
 		break;
 
 	    case FT_ID_HEAD_BIN:
@@ -2923,7 +2960,7 @@ enumFileType AnalyzeMemFT ( const void * preload_buf, off_t file_size )
 
 ///////////////////////////////////////////////////////////////////////////////
 
-enumError XPrintErrorFT ( XPARM File_t * f, enumFileType err_mask )
+enumError XPrintErrorFT ( XPARM WFile_t * f, enumFileType err_mask )
 {
     ASSERT(f);
     if ( f->ftype == FT_UNKNOWN )
@@ -2972,7 +3009,7 @@ enumError XPrintErrorFT ( XPARM File_t * f, enumFileType err_mask )
 	stat = PrintError( XERROR0, ERR_WRONG_FILE_TYPE,
 		"GameCube or Wii ISO image expected: %s\n", f->fname );
 
-    else if ( nand_mask & FT_A_WDF )
+    else if ( nand_mask & FT_M_WDF )
 	stat = PrintError( XERROR0, ERR_WRONG_FILE_TYPE,
 		"WDF expected: %s\n", f->fname );
 
@@ -2983,6 +3020,10 @@ enumError XPrintErrorFT ( XPARM File_t * f, enumFileType err_mask )
     else if ( nand_mask & FT_A_CISO )
 	stat = PrintError( XERROR0, ERR_WRONG_FILE_TYPE,
 		"CISO expected: %s\n", f->fname );
+
+    else if ( nand_mask & FT_A_GCZ )
+	stat = PrintError( XERROR0, ERR_WRONG_FILE_TYPE,
+		"GCZ expected: %s\n", f->fname );
 
     f->last_error = stat;
     if ( f->max_error < stat )
@@ -3017,61 +3058,59 @@ ccp GetNameFT ( enumFileType ftype, int ignore )
 			? ( ftype & FT_A_GC_ISO ? "WBFS/GC" : "WBFS/WII" )
 			: ignore > 1
 				? 0
-				: ftype & FT_A_WDF
+				: ftype & FT_M_WDF
 					? "WDF+WBFS"
 					: "WBFS";
 
 	case FT_ID_GC_ISO:
-	    return ftype & FT_A_WDF
-			? "WDF/GC"
-			: ftype & FT_A_WIA
-				? "WIA/GC"
-					: ftype & FT_A_CISO
-					? "CISO/GC"
-					: "ISO/GC";
+	    return ftype & FT_A_WDF1 ? "WDF1/GC"
+		 : ftype & FT_A_WDF2 ? "WDF2/GC"
+		 : ftype & FT_A_WIA  ? "WIA/GC"
+		 : ftype & FT_A_CISO ? "CISO/GC"
+		 : ftype & FT_A_GCZ  ? "GCZ/GC"
+		 : "ISO/GC";
 
 	case FT_ID_WII_ISO:
-	    return ftype & FT_A_WDF
-			? "WDF/WII"
-			: ftype & FT_A_WIA
-				? "WIA/WII"
-					: ftype & FT_A_CISO
-					? "CISO/WII"
-					: "ISO/WII";
+	    return ftype & FT_A_WDF1 ? "WDF1/WII"
+		 : ftype & FT_A_WDF2 ? "WDF2/WII"
+		 : ftype & FT_A_WIA  ? "WIA/WII"
+		 : ftype & FT_A_CISO ? "CISO/WII"
+		 : ftype & FT_A_GCZ  ? "GCZ/WII"
+		 : "ISO/WII";
 
 	case FT_ID_DOL:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/DOL"  : "DOL";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/DOL"  : "DOL";
 
 	case FT_ID_CERT_BIN:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/CERT" : "CERT.BIN";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/CERT" : "CERT.BIN";
 
 	case FT_ID_TIK_BIN:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/TIK"  : "TIK.BIN";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/TIK"  : "TIK.BIN";
 
 	case FT_ID_TMD_BIN:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/TMD"  : "TMD.BIN";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/TMD"  : "TMD.BIN";
 
 	case FT_ID_HEAD_BIN:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/HEAD" : "HEAD.BIN";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/HEAD" : "HEAD.BIN";
 	    break;
 
 	case FT_ID_BOOT_BIN:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/BOOT" : "BOOT.BIN";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/BOOT" : "BOOT.BIN";
 
 	case FT_ID_FST_BIN:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/FST"  : "FST.BIN";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/FST"  : "FST.BIN";
 
 	case FT_ID_PATCH:
-	    return ignore > 1 ? 0 : ftype & FT_A_WDF ? "WDF/WPAT" : "WITPATCH";
+	    return ignore > 1 ? 0 : ftype & FT_M_WDF ? "WDF/WPAT" : "WITPATCH";
 
 	default:
-	    return ignore > 1
-			? 0
-			: ftype & FT_A_WDF
-				? "WDF/*"
-				: ftype & FT_A_CISO
-					? "CiSO/*"
-					: "OTHER";
+	    return ignore > 1 ? 0
+		: ftype & FT_A_WDF1 ? "WDF1/*"
+		: ftype & FT_A_WDF2 ? "WDF2/*"
+		: ftype & FT_A_WIA  ? "WIA/*"
+		: ftype & FT_A_CISO ? "CISO/*"
+		: ftype & FT_A_GCZ  ? "GCZ/*"
+		: "OTHER";
     }
 }
 
@@ -3087,11 +3126,17 @@ ccp GetContainerNameFT ( enumFileType ftype, ccp answer_if_no_container )
 
 enumOFT FileType2OFT ( enumFileType ftype )
 {
-    if ( ftype & FT_A_WDF )
-	return OFT_WDF;
+    if ( ftype & FT_A_WDF2 )
+	return OFT_WDF2;
+
+    if ( ftype & FT_A_WDF1 )
+	return OFT_WDF1;
 
     if ( ftype & FT_A_WIA )
 	return OFT_WIA;
+
+    if ( ftype & FT_A_GCZ )
+	return OFT_GCZ;
 
     if ( ftype & FT_A_CISO )
 	return OFT_CISO;
@@ -3181,22 +3226,12 @@ enumError CopyImage
     if (*fi->wbfs_id6)
 	CopyPatchWbfsId(fo->wbfs_id6,fi->wbfs_id6);
 
-    if (opt_direct)
-    {
-	switch((int)oft)
-	{
-	    case OFT_WBFS:
-		PRINT("ENABLE allow_direct_io\n");
-		fo->f.allow_direct_io = true;
-	};
-    }
-
-    enumError err = CreateFile( &fo->f, 0, oft_info[oft].iom, overwrite );
+    enumError err = CreateWFile( &fo->f, 0, oft_info[oft].iom, overwrite );
     if ( err || SIGINT_level > 1 )
 	goto abort;
 
     if (opt_split)
-	SetupSplitFile(&fo->f,oft,opt_split_size);
+	SetupSplitWFile(&fo->f,oft,opt_split_size);
 
     err = SetupWriteSF(fo,oft);
     if ( err || SIGINT_level > 1 )
@@ -3339,7 +3374,7 @@ enumError ExtractImage
     wfi.link_image	= copy_image && !opt_no_link;
 
     enumError err = CreateFST(&wfi,dest_dir);
-    ResetParamField(&wfi.align_info);
+    ResetWiiParamField(&wfi.align_info);
 
     if ( !err && wfi.not_created_count )
     {	
@@ -3362,11 +3397,13 @@ enumError ExtractImage
 
 enumError CopySF ( SuperFile_t * in, SuperFile_t * out )
 {
-    ASSERT(in);
-    ASSERT(out);
-    TRACE("---\n");
-    TRACE("+++ CopySF(%d->%d) raw=%d+++\n",
+    DASSERT(in);
+    DASSERT(out);
+    PRINT("---\n");
+    PRINT("+++ CopySF(%d->%d) raw=%d+++\n",
 		GetFD(&in->f), GetFD(&out->f), out->raw_mode );
+
+    UpdateVersionWDF(in->wdf,out->wdf);
 
     if ( !out->raw_mode && !part_selector.whole_disc )
     {
@@ -3376,10 +3413,10 @@ enumError CopySF ( SuperFile_t * in, SuperFile_t * out )
 	    MarkMinSizeSF( out, opt_disc_size ? opt_disc_size : in->file_size );
 	    wd_filter_usage_table(disc,wdisc_usage_tab,0);
 
-	    if ( out->iod.oft == OFT_WDF )
+	    if ( out->iod.oft == OFT_WDF1 || out->iod.oft == OFT_WDF2 )
 	    {
-		// write an empty disc header -> makes renaming easier
-		enumError err = WriteSF(out,0,zerobuf,WII_TITLE_OFF+WII_TITLE_SIZE);
+		// write an empty disc header => makes detection easier
+		enumError err = WriteSF(out,0,zerobuf,WII_HEAD_INFO_SIZE);
 		if (err)
 		    return err;
 	    }
@@ -3471,7 +3508,8 @@ enumError CopySF ( SuperFile_t * in, SuperFile_t * out )
 
     switch (in->iod.oft)
     {
-	case OFT_WDF:	return CopyWDF(in,out);
+	case OFT_WDF1:
+	case OFT_WDF2:	return CopyWDF(in,out);
 	case OFT_WIA:	return CopyWIA(in,out);
 	case OFT_WBFS:	return CopyWBFSDisc(in,out);
 	default:	return CopyRaw(in,out);
@@ -3592,14 +3630,16 @@ enumError CopyRawData2
 
 enumError CopyWDF ( SuperFile_t * in, SuperFile_t * out )
 {
-    ASSERT(in);
-    ASSERT(out);
-    TRACE("---\n");
-    TRACE("+++ CopyWDF(%d,%d) +++\n",GetFD(&in->f),GetFD(&out->f));
+    DASSERT(in);
+    DASSERT(out);
+    PRINT("---\n");
+    PRINT("+++ CopyWDF(%d,%d) +++\n",GetFD(&in->f),GetFD(&out->f));
 
-    if (!in->wc)
+    wdf_controller_t *wdf = in->wdf;
+    if (!wdf)
 	return ERROR0(ERR_INTERNAL,0);
 
+    UpdateVersionWDF(in->wdf,out->wdf);
     enumError err = MarkMinSizeSF(out, opt_disc_size ? opt_disc_size : in->file_size );
     if (err)
 	return err;
@@ -3608,15 +3648,15 @@ enumError CopyWDF ( SuperFile_t * in, SuperFile_t * out )
     if ( out->show_progress )
     {
 	int i;
-	for ( i = 0; i < in->wc_used; i++ )
-	    pr_total += in->wc[i].data_size;
+	for ( i = 0; i < wdf->chunk_used; i++ )
+	    pr_total += wdf->chunk[i].data_size;
 	PrintProgressSF(0,pr_total,out);
     }
 
     int i;
-    for ( i = 0; i < in->wc_used; i++ )
+    for ( i = 0; i < wdf->chunk_used; i++ )
     {
-	WDF_Chunk_t *wc = in->wc + i;
+	wdf2_chunk_t *wc = wdf->chunk + i;
 	if ( wc->data_size )
 	{
 	    u64 dest_off = wc->file_pos;
@@ -3762,7 +3802,7 @@ enumError CopyWBFSDisc ( SuperFile_t * in, SuperFile_t * out )
 ///////////////////////////////////////////////////////////////////////////////
 
 enumError AppendF
-	( File_t * in, SuperFile_t * out, off_t in_off, size_t count )
+	( WFile_t * in, SuperFile_t * out, off_t in_off, size_t count )
 {
     ASSERT(in);
     ASSERT(out);
@@ -3790,7 +3830,7 @@ enumError AppendF
 ///////////////////////////////////////////////////////////////////////////////
 
 enumError AppendSparseF
-	( File_t * in, SuperFile_t * out, off_t in_off, size_t count )
+	( WFile_t * in, SuperFile_t * out, off_t in_off, size_t count )
 {
     ASSERT(in);
     ASSERT(out);
@@ -4084,6 +4124,7 @@ bool CloseDiffFile
 
  #if HAVE_PRINT
     bool print_stat = false;
+    MARK_USED(print_stat);
  #endif
 
     if (diff->chunk_count)

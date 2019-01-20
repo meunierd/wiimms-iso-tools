@@ -9,12 +9,12 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
  *   Copyright (c) 2009-2012 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
@@ -41,9 +41,9 @@
 
   { T_DEF_TOOL,	"wdf", 0,
 		"wdf [options]... [+command] [options]... files...",
-		"wdf is a support tool for WDF, WIA and CISO archives."
-		" It convert (pack and unpack), compare"
-		" and dump WDF, WIA (dump and cat only) and CISO archives."
+		"wdf is a support tool for WDF, WIA, CISO and GCZ images."
+		" It converts (packs and unpacks), compares and dumps WDF and CISO images."
+		" Additionally it dumps WIA and GCT image and unpacks WIA images."
 		" The default command depends on the program file name"
 		" (see command descriptions). Usual names are"
 		" @wdf@, @unwdf@, @wdf-cat@, @wdf-cmp@ and @wdf-dump@"
@@ -69,12 +69,12 @@
 
   { T_DEF_CMD,	"PACK",		"+PACK|+P",
 		    "wdf +PACK [option]... files...",
-		"Pack sources into WDF or CISO archives."
+		"Pack sources into WDF or CISO images."
 		" This is the general default." },
 
   { T_DEF_CMD,	"UNPACK",	"+UNPACK|+U",
 		    "wdf +UNPACK [option]... files...",
-		"Unpack WDF, WIA and CISO archives."
+		"Unpack WDF, WIA and CISO images."
 		"\n "
 		" This is the default command, when the program name"
 		" starts with the two letters @'un'@ in any case." },
@@ -96,15 +96,15 @@
 		" The standard is to compare two source files."
 		" If {--dest} or {--DEST} is set, than all source files"
 		" are compared against files in the destination path with equal names."
-		" If the second source file is missing then standard input"
-		" (stdin) is used instead."
+		" If the second source file is missed,"
+		" then standard input (stdin) is used instead."
 		"\n "
 		" This is the default command, when the program name"
 		" contains the sub string @'diff'@ or @'cmp'@ in any case." },
 
   { T_DEF_CMD,	"DUMP",		"+DUMP|+D",
 		    "wdf +DUMP [option]... files...",
-		"Dump the data structure of WDF, WIA and CISO archives"
+		"Dump the data structure of WDF, WIA, CISO and GCZ images"
 		" and ignore other files."
 		"\n "
 		" This is the default command, when the program"
@@ -137,10 +137,22 @@
   { T_OPT_GM,	"LOGGING",	"L|logging",
 		0, 0 /* copy of wit */ },
 
+  { T_OPT_GO|F_IGNORE,
+		"COLOR",	"color",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_G|F_IGNORE,
+		"COLOR_256",	"256-colors|256colors",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_G|F_IGNORE,
+		"NO_COLOR",	"no-colors|nocolors",
+		0, 0 /* copy of wit */ },
+
   { T_OPT_GP,	"IO",		"io",
 		0, 0 /* copy of wit */ },
 
-  { H_OPT_G,	"DIRECT",	"direct",
+  { T_OPT_GO,	"DSYNC",	"dsync",
 		0, 0 /* copy of wit */ },
 
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
@@ -172,31 +184,29 @@
 
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
 
-  { T_OPT_C,	"WDF",		"W|wdf",
-		0,
+  { T_OPT_CO,	"WDF",		"W|wdf",
+		"[=param]",
 		"Force WDF output mode if packing"
 		" and set the default suffix to @'.wdf'@."
-		" This is the general default." },
+		" This is the general default."
+		" {--wdf=param} is a short cut for {--wdf --align-wdf=param}." },
 
- #if WDF2_ENABLED > 1
-
-  { T_OPT_C,	"WDF1",		"wdf1",
-		0,
-		"Force WDF output mode if packing, use WDF v1,"
-		" and set the default suffix to @'.wdf'@." },
+  { T_OPT_CO,	"WDF1",		"wdf1",
+		"[=param]",
+		"Force WDF v1 output mode, if packing."
+		" Set the default suffix to @'.wdf'@."
+		" {--wdf1=param} is a short cut for {--wdf1 --align-wdf=param}." },
 
   { T_OPT_CO,	"WDF2",		"wdf2",
-		"[=align]",
-		"Force WDF output mode if packing,"
-		" use WDF v2 with align factor 1,"
-		" and set the default suffix to @'.wdf'@."
-		" {--wdf2=align} is a shortcut for {--wdf2 --wdf-align=align}." },
+		"[=param]",
+		"Force WDF v2 output mode, if packing."
+		" Set the default suffix to @'.wdf'@."
+		" {--wdf2=param} is a short cut for {--wdf2 --align-wdf=param}." },
 
-  { T_OPT_GP,	"WDF_ALIGN",	"wdf-align|wdfalign",
+		// [[2do]] 2014-01: wdf-align is obsolete at 2014-07
+  { T_OPT_GP,	"ALIGN_WDF",	"align-wdf|alignwdf|wdf-align|wdfalign",
 		0, 0 /* copy of wit */ },
 		
- #endif // WDF2_ENABLED > 1
-
   { T_OPT_CO,	"WIA",		"wia",
 		"[=compr]",
 		"Force WIA output mode if packing"
@@ -253,6 +263,12 @@
 		0, 0 /* copy of wit */ },
 
   { T_OPT_C,	"PRESERVE",	"p|preserve",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_C,	"AUTO_SPLIT",	"auto-split|autosplit",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_C,	"NO_SPLIT",	"no-split|nosplit",
 		0, 0 /* copy of wit */ },
 
   { T_OPT_C,	"SPLIT",	"z|split",
@@ -313,6 +329,8 @@
   { T_GRP_BEG,	"DEST_PLUS",	0,0,0 },
 
   { T_COPY_GRP,	"DEST",		0,0,0 },
+  { T_COPT,	"AUTO_SPLIT",	0,0,0 },
+  { T_COPT,	"NO_SPLIT",	0,0,0 },
   { T_COPT,	"SPLIT",	0,0,0 },
   { T_COPT,	"SPLIT_SIZE",	0,0,0 },
   { T_COPT,	"PREALLOC",	0,0,0 },
@@ -327,11 +345,9 @@
   { T_GRP_BEG,	"FILETYPE",	0,0,0 },
 
   { T_COPT,	"WDF",		0,0,0 },
-#if WDF2_ENABLED > 1
   { T_COPT,	"WDF1",		0,0,0 },
   { T_COPT,	"WDF2",		0,0,0 },
-  { T_COPT,	"WDF_ALIGN",	0,0,0 },
-#endif
+  { T_COPT,	"ALIGN_WDF",	0,0,0 },
   { T_COPT,	"WIA",		0,0,0 },
   { T_COPT,	"CISO",		0,0,0 },
   { T_COPT,	"WBI",		0,0,0 },

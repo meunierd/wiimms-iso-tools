@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -59,7 +59,7 @@ int opt_hook = 0; // <0: disabled, =0: auto, >0: enabled
 
 enumEncoding ScanEncoding ( ccp arg )
 {
-    static const CommandTab_t tab[] =
+    static const KeywordTab_t tab[] =
     {
 	{ 0,			"AUTO",		0,		ENCODE_MASK },
 
@@ -75,7 +75,7 @@ enumEncoding ScanEncoding ( ccp arg )
 	{ 0,0,0,0 }
     };
 
-    const int stat = ScanCommandListMask(arg,tab);
+    const int stat = ScanKeywordListMask(arg,tab);
     if ( stat >= 0 )
 	return stat & ENCODE_MASK;
 
@@ -133,7 +133,7 @@ enumEncoding SetEncoding
 
 enumRegion ScanRegion ( ccp arg )
 {
-    static const CommandTab_t tab[] =
+    static const KeywordTab_t tab[] =
     {
 	{ REGION_JAP,		"JAPAN",	"JAP",		0 },
 	{ REGION_USA,		"USA",		0,		0 },
@@ -146,7 +146,7 @@ enumRegion ScanRegion ( ccp arg )
 	{ 0,0,0,0 }
     };
 
-    const int stat = ScanCommandListMask(arg,tab);
+    const int stat = ScanKeywordListMask(arg,tab);
     if ( stat >= 0 )
 	return stat;
 
@@ -199,12 +199,12 @@ static const RegionInfo_t RegionTable[] =
 
 	/*A*/ { REGION_EUR,  0, "ALL ", "All" },
 	/*B*/ { REGION_EUR,  0, "-?- ", "-?-" },
-	/*C*/ { REGION_EUR,  0, "-?- ", "-?-" },
+	/*C*/ { REGION_EUR,  0, "CHIN", "Chinese" },
 	/*D*/ { REGION_EUR, 1,  "GERM", "German" },
-	/*E*/ { REGION_USA, 1,  "NTSC", "NTSC" },
+	/*E*/ { REGION_USA, 1,  "USA ", "NTSC/USA" },
 	/*F*/ { REGION_EUR, 1,  "FREN", "French" },
 	/*G*/ { REGION_EUR,  0, "-?- ", "-?-" },
-	/*H*/ { REGION_EUR,  0, "NL  ", "Netherlands" },	// ??
+	/*H*/ { REGION_EUR,  0, "NL  ", "Netherlands" },
 	/*I*/ { REGION_EUR, 1,  "ITAL", "Italian" },
 	/*J*/ { REGION_JAP, 1,  "JAPA", "Japan" },
 	/*K*/ { REGION_KOR, 1,  "KORE", "Korea" },
@@ -214,15 +214,15 @@ static const RegionInfo_t RegionTable[] =
 	/*O*/ { REGION_EUR,  0, "-?- ", "-?-" },
 	/*P*/ { REGION_EUR, 1,  "PAL ", "PAL" },
 	/*Q*/ { REGION_KOR, 1,  "KO/J", "Korea (japanese)" },
-	/*R*/ { REGION_EUR,  0, "RUS ", "Russia" },		// ??
+	/*R*/ { REGION_EUR, 1,  "RUS ", "Russia" },
 	/*S*/ { REGION_EUR, 1,  "SPAN", "Spanish" },
 	/*T*/ { REGION_KOR, 1,  "KO/E", "Korea (english)" },
-	/*U*/ { REGION_EUR,  0, "AUS ", "Australia" },		// ??
-	/*V*/ { REGION_EUR,  0, "SCAN", "Scandinavian" },	// ??
-	/*W*/ { REGION_EUR,  0, "CHIN", "China" },		// ??
-	/*X*/ { REGION_EUR, 1,  "RF  ", "Region free" },
-	/*Y*/ { REGION_EUR,  0, "-?- ", "-?-" },
-	/*Z*/ { REGION_EUR,  0, "-?- ", "-?-" },
+	/*U*/ { REGION_EUR,  0, "AUS ", "Australia" },
+	/*V*/ { REGION_EUR,  0, "SCAN", "Scandinavian" },
+	/*W*/ { REGION_EUR,  0, "TAIW", "Taiwan" },
+	/*X*/ { REGION_EUR, 1,  "EURO", "Almost Europe" },
+	/*Y*/ { REGION_EUR,  0, "EURO", "Almost Europe" },
+	/*Z*/ { REGION_EUR,  0, "ANY ", "PAL or US" },
 
 	/*?*/ { REGION_EUR,  0, "-?- ", "-?-" } // illegal region_code
 };
@@ -244,16 +244,19 @@ const RegionInfo_t * GetRegionInfo ( char region_code )
 
 wd_ckey_index_t ScanCommonKey ( ccp arg )
 {
-    static const CommandTab_t tab[] =
+    static const KeywordTab_t tab[] =
     {
 	{ WD_CKEY_STANDARD,	"STANDARD",	0,		0 },
 	{ WD_CKEY_KOREA,	"KOREAN",	0,		0 },
+ #ifdef SUPPORT_CKEY_DEVELOP
+	{ WD_CKEY_DEVELOPER,	"DEVELOPER",	0,		0 },
+ #endif
 	{ WD_CKEY__N,		"AUTO",		0,		0 },
 
 	{ 0,0,0,0 }
     };
 
-    const int stat = ScanCommandListMask(arg,tab);
+    const int stat = ScanKeywordListMask(arg,tab);
     if ( stat >= 0 )
 	return stat;
 
@@ -276,6 +279,9 @@ int ScanOptCommonKey ( ccp arg )
     const wd_ckey_index_t new_common_key = ScanCommonKey(arg);
     if ( new_common_key == -1 )
 	return 1;
+ #ifdef TEST
+    printf("COMMON-KEY: %d -> %d\n",opt_common_key,new_common_key);
+ #endif
     opt_common_key = new_common_key;
     return 0;
 }
@@ -333,12 +339,212 @@ int ScanOptIOS ( ccp arg )
 
 //
 ///////////////////////////////////////////////////////////////////////////////
+///////////////		    --http --domain --wiimmfi		///////////////
+///////////////////////////////////////////////////////////////////////////////
+
+bool opt_http = false;
+ccp opt_domain = 0;
+
+static const char nin_wifi_net[] = "nintendowifi.net";
+static uint nin_wifi_net_len = sizeof(nin_wifi_net) - 1;
+
+static const char gamespy_com[] = "gamespy.com";
+static uint gamespy_com_len = sizeof(gamespy_com) - 1;
+
+static const char sake_gamespy_com[] = "sake.gamespy.com";
+static uint sake_gamespy_com_len = sizeof(sake_gamespy_com) - 1;
+
+///////////////////////////////////////////////////////////////////////////////
+// [[domain]]
+
+int ScanOptDomain ( bool http, ccp domain )
+{
+    if (http)
+	opt_http = true;
+
+    if ( domain && *domain )
+    {
+	if ( strlen(domain) > nin_wifi_net_len )
+	    return ERROR0(ERR_SEMANTIC,"Domain '%s' is to long.",domain);
+	opt_domain = domain;
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// [[domain]]
+
+static uint patch_main_helper ( u8 *data, uint size, ccp title )
+{
+    ASSERT(data);
+    ASSERT( !opt_domain || strlen(opt_domain) <= nin_wifi_net_len );
+
+    uint stat = 0;
+    char *end = (char*)data + size;
+
+    char *next_n = 0, *update_n = (char*)data+1;
+    char *next_h = memchr(data+1,'h',size-1);
+    if (!next_h)
+	next_h = end;
+
+    for(;;)
+    {
+      if (update_n)
+      {
+        if ( update_n < end )
+        {
+	    // search for 'nintendowifi.net'
+	    next_n = memchr(update_n,'n',end-update_n);
+	    if (!next_n)
+		next_n = end;
+
+	    // search for 'gamespy.com'
+	    char *next_g = memchr(update_n,'g',end-update_n);
+	    if ( next_g && next_g < next_n )
+		next_n = next_g;
+	}
+	else
+	    next_n = end;
+	update_n = 0;
+      }
+      if ( next_h >= end && next_n >= end )
+	break;
+
+      ccp found = 0, info = 0;
+      if ( next_h < next_n )
+      {
+	if ( opt_http && !memcmp(next_h,"https",5) )
+	{
+	    uint mode	= !memcmp(next_h+5,"://naswii.",10) ? 2
+			: !next_h[-1] || !memcmp(next_h+5,"://",3) ? 1
+			: 0;
+	    if (mode)
+	    {
+		stat |= 1;
+		found = next_h;
+		info  = "HTTPS:";
+
+		next_h += 4;
+		char *dest = next_h++;
+		if ( mode == 2 )
+		{
+		    strcpy(dest,"://nas.");
+		    dest += 7;
+		    next_h += 10;
+		}
+		while (*next_h)
+		    *dest++ = *next_h++;
+		while ( dest < next_h )
+		    *dest++ = 0;
+
+		if ( next_n < next_h )
+		    update_n = (char*)found; // recalc next_n, because position moved
+	    }
+	}
+
+	next_h++;
+	next_h = memchr(next_h,'h',end-next_h);
+	if (!next_h)
+	    next_h = end;
+      }
+      else
+      {
+	if ( opt_domain
+		&& next_n[-1] == '.'
+		&& !memcmp(next_n,nin_wifi_net,nin_wifi_net_len) )
+	{
+	    const char ch = next_n[nin_wifi_net_len];
+	    if ( !ch || ch == '/' )
+	    {
+		stat |= 2;
+		found = next_n;
+		info  = "DOMAIN:";
+
+		char *dest = StringCopyS(next_n,nin_wifi_net_len,opt_domain);
+		next_n += nin_wifi_net_len;
+		while (*next_n)
+		    *dest++ = *next_n++;
+		while ( dest < next_n )
+		    *dest++ = 0;
+	    }
+	}
+	else if ( opt_domain
+		&& !memcmp(next_n-5,sake_gamespy_com,sake_gamespy_com_len) )
+	{
+	    const char ch = next_n[gamespy_com_len];
+	    if ( !ch || ch == '/' )
+	    {
+		if ( strlen(opt_domain) > gamespy_com_len )
+		{
+		    static int count = 0;
+		    if (!count++)
+			ERROR0(ERR_WARNING,"Can't replace '%s' by '%s': to long\n",
+					gamespy_com, opt_domain );
+		}
+		else
+		{
+		    stat |= 2;
+		    found = next_n;
+		    info  = "DOMAIN:";
+
+		    char *dest = StringCopyS(next_n,gamespy_com_len,opt_domain);
+		    next_n += gamespy_com_len;
+		    while (*next_n)
+			*dest++ = *next_n++;
+		    while ( dest < next_n )
+			*dest++ = 0;
+		}
+	    }
+	}
+	update_n = next_n + 1;
+      }
+      if ( found && verbose > 2 )
+      {
+	ccp beg = found - 1;
+	while ( *beg > ' ' && *beg < 0x7f )
+	    beg--;
+	beg++;
+	fprintf(stderr,"PATCHED %s/%-7s %6x  %s\n",title,info,(int)(beg-(ccp)data),beg);
+      }
+    }
+
+    return stat;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+int patch_main ( wd_disc_t * disc )
+{
+    DASSERT(disc);
+
+    if ( !opt_http && !opt_domain )
+	return 0;
+
+    wd_patch_main_t pm;
+    wd_patch_main(&pm,disc,true,true);
+
+    if ( !pm.main && !pm.staticr )
+	return 0;
+
+    uint stat = 0;
+    if ( pm.main )
+	stat |= patch_main_helper(pm.main->data,pm.main->size,"MAIN");
+    if ( pm.staticr )
+	stat |= patch_main_helper(pm.staticr->data,pm.staticr->size,"SREL");
+
+    PRINT("patch_main(), stat=%x\n",stat);
+    return stat;
+}
+
+//
+///////////////////////////////////////////////////////////////////////////////
 ///////////////			--modify			///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 wd_modify_t ScanModify ( ccp arg )
 {
-    static const CommandTab_t tab[] =
+    static const KeywordTab_t tab[] =
     {
 	{ WD_MODIFY__NONE,	"NONE",		"-",	WD_MODIFY__ALL },
 	{ WD_MODIFY__ALL,	"ALL",		0,	WD_MODIFY__ALL },
@@ -354,7 +560,7 @@ wd_modify_t ScanModify ( ccp arg )
 	{ 0,0,0,0 }
     };
 
-    const int stat = ScanCommandList(arg,tab,0,true,0,0);
+    const int stat = ScanKeywordList(arg,tab,0,true,0,0,0,0);
     if ( stat >= 0 )
 	return ( stat & WD_MODIFY__ALL ? stat & WD_MODIFY__ALL : stat ) | WD_MODIFY__ALWAYS;
 
@@ -705,7 +911,7 @@ wd_trim_mode_t ScanTrim
     ccp err_text_extend		// error message extention
 )
 {
-    static const CommandTab_t tab[] =
+    static const KeywordTab_t tab[] =
     {
 	{ WD_TRIM_DEFAULT,	"DEFAULT",	0,	WD_TRIM_M_ALL },
 
@@ -723,7 +929,7 @@ wd_trim_mode_t ScanTrim
 	{ 0,0,0,0 }
     };
 
-    const int stat = ScanCommandList(arg,tab,0,true,0,0);
+    const int stat = ScanKeywordList(arg,tab,0,true,0,0,0,0);
     if ( stat >= 0 )
 	return stat;
 
@@ -887,7 +1093,7 @@ enumError RewriteModifiedSF
 	fo = wbfs->sf;
     ASSERT(fo);
     ASSERT(fo->f.is_writing);
-    TRACE("+++ RewriteModifiedSF(%p,%p,%p,%llx), oft=%d,%d\n",
+    PRINT("+++ RewriteModifiedSF(%p,%p,%p,%llx), oft=%d,%d\n",
 		fi,fo,wbfs,off,fi->iod.oft,fo->iod.oft);
 
     wd_disc_t * disc = fi->disc1;

@@ -281,6 +281,7 @@ COMMANDS:
     WDF+ISO  : A ISO image shrinked with WDF.
     WDF      : Any other WDF file (not WBFS or ISO)
     WIA      : A ISO image packed with WIA.
+    GCZ      : Dolphins GameCup-Zip images.
     OTHER    : Any other file
 
 
@@ -618,7 +619,7 @@ There are some hidden options implemented for testing:
 The user can define environment variables as additional way to submit options
 to the tool. All options are accepted and used as default. 
 
-See http://wit.wiimm.de/info/environ.html for details.
+See https://wit.wiimm.de/info/environ.html for details.
 
 
 @@MODULE(signals.txt)@@

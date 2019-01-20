@@ -9,12 +9,12 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
  *   Copyright (c) 2009-2012 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
@@ -44,8 +44,8 @@
 		"Wiimms ISO Tool :"
 		" It can list, analyze, verify, convert, split, join,"
 		" patch, mix, extract, compose, rename and compare"
-		" Wii and GameCube discs."
-		" It can create and dump different other Wii file formats." },
+		" Wii and GameCube images."
+		" It also can create and dump different other Wii file formats." },
 
   //
   //---------- list of all wit commands ----------
@@ -63,9 +63,13 @@
   { T_DEF_CMD,	"INFO",		"INFO",
 		    "wit INFO [keyword]...",
 		"Print some internal information about the keywords."
-		" If the keyword @ALL@ is set or no keyword is entered"
-		" information for all possible keywords are printed."
-		" Possible keywords are: @FILE-FORMAT@ and @ALL@." },
+		" If the keyword @ALL@ is set or no keyword is entered,"
+		" then all informations are printed."
+		" Possible keywords are: @IMAGE-FORMAT@ and @ALL@." },
+
+  #define CMD_INFO_LONG \
+		"Print additional infos, if available." \
+		" For @IMAGE-FORMAT@: Print a list, that explains the attributes."
 
   { T_DEF_CMD,	"TEST",		"TEST",
 		    "wit TEST [ignored]...",
@@ -82,6 +86,14 @@
 		" See option {--compression} for syntax details."
 		" If no mode is given than print a table"
 		" with all available compression modes and alternative mode names." },
+
+  { T_DEF_CMD,	"FEATURES",	"FEATURES",
+		    "wit FEATURES [feature]...",
+		"Check, if the requested features are available."
+		" All keywords are possible."
+		" If no keyword is used, all supported features are printed."
+		" The exit status is 0 for 'all features supported',"
+		" 1 for 'some features supported' and 2 for 'no feature supported'." },
 
   { T_DEF_CMD,	"ANAID",	"ANAID",
 		    "wit ANAID [id]...",
@@ -121,7 +133,7 @@
 		" 'XML=filname' or 'NEW=type,addr,size'"
 		" or 'NEW=type,AUTO ' or 'LOAD=addr,filename' or 'addr=patch[#cond]',"
 		" and 'type' is either 'TEXT' or 'DATA'."
-		"\1 Read http://wit.wiimm.de/cmd/wit/dolpatch for more details." },
+		"\1 Read https://wit.wiimm.de/cmd/wit/dolpatch for more details." },
 
   { H_DEF_CMD,	"CODE",		"_CODE",
 		    "wit _CODE [files]",
@@ -154,6 +166,11 @@
   { T_DEF_CMD,	"ID6",		"ID6|ID",
 		    "wit ID6 [source]...",
 		"Print ID6 of all found ISO files as simple list." },
+
+  { T_DEF_CMD,	"ID8",		"ID8",
+		    "wit ID8 [source]...",
+		"Print ID6 + 2 next bytes as disc and version number"
+		" of all found ISO files as simple list." },
 
   { T_DEF_CMD,	"FRAGMENTS",	"FRAGMENTS",
 		    "wit FRAGMENTS [source]...",
@@ -205,34 +222,34 @@
 
   { T_DEF_CMD,	"DIFF",		"DIFF|CMP",
 		    "wit DIFF source dest\n"
-		    "wit DIFF [[--source] source]... [--recurse source]... [-d|-D] dest",
+		    "wit DIFF [[--source|--recurse] source]... [-d|-D] dest",
 		"DIFF compares ISO images in scrubbed or raw mode or on file level."
 		" Images, WBFS partitions and directories are accepted as source."
 		" DIFF works like {COPY} but comparing source and destination." },
 
   { T_DEF_CMD,	"FDIFF",	"FDIFF|FCMP",
 		    "wit FDIFF source dest\n"
-		    "wit FDIFF [[--source] source]... [--recurse source]... [-d|-D] dest",
+		    "wit FDIFF [[--source|--recurse] source]... [-d|-D] dest",
 		"FDIFF compares ISO images on file level."
 		" Images, WBFS partitions and directories are accepted as source."
 		" 'FDIFF' is a shortcut for {DIFF --files +}." },
 
   { T_DEF_CMD,	"EXTRACT",	"EXTRACT|X",
 		    "wit EXTRACT source dest\n"
-		    "wit EXTRACT [[--source] source]... [--recurse source]... [-d|-D] dest",
+		    "wit EXTRACT [[--source|--recurse] source]... [-d|-D] dest",
 		"Extract all files of each source to new directory structures."
 		" Images, WBFS partitions and directories are accepted as source."  },
 
   { T_DEF_CMD,	"COPY",		"COPY|CP",
 		    "wit COPY source dest\n"
-		    "wit COPY [[--source] source]... [--recurse source]... [-d|-D] dest",
+		    "wit COPY [[--source|--recurse] source]... [-d|-D] dest",
 		"Copy, scrub, convert, join, split, compose, extract,"
 		" patch, encrypt and decrypt Wii and GameCube disc images."
 		" Images, WBFS partitions and directories are accepted as source." },
 
   { T_DEF_CMD,	"CONVERT",	"CONVERT|CV|SCRUB|SB",
 		    "wit CONVERT source\n"
-		    "wit CONVERT [[--source] source]... [--recurse source]...",
+		    "wit CONVERT [[--source|--recurse] source]...",
 		"Convert, scrub, join, split, compose, extract,"
 		" patch, encrypt and decrypt Wii and GameCube disc images"
 		" and replace the source with the result."
@@ -248,25 +265,25 @@
 
   { T_DEF_CMD,	"EDIT",		"EDIT|ED",
 		    "wit EDIT source\n"
-		    "wit EDIT [[--source] source]... [--recurse source]...",
+		    "wit EDIT [[--source|--recurse] source]...",
 		"Edit an existing Wii and GameCube ISO image"
 		" and patch some values."
 		" Images, WBFS partitions and directories are accepted as source." },
 
   { T_DEF_CMD,	"IMGFILES",	"IMGFILES|IF",
 		    "wit IMGFILES source\n"
-		    "wit IMGFILES [[--source] source]... [--recurse source]...",
+		    "wit IMGFILES [[--source|--recurse] source]...",
 		"Print a list of all image files including their associated split files."
 		" Each file is printed on a separate line for further batch processing." },
 
   { T_DEF_CMD,	"REMOVE",	"REMOVE|RM",
 		    "wit REMOVE source\n"
-		    "wit REMOVE [[--source] source]... [--recurse source]...",
+		    "wit REMOVE [[--source|--recurse] source]...",
 		"Remove images including their associated split files." },
 
   { T_DEF_CMD,	"MOVE",		"MOVE|MV",
 		    "wit MOVE source dest\n"
-		    "wit MOVE [[--source] source]... [--recurse source]... [-d|-D] dest",
+		    "wit MOVE [[--source|--recurse] source]... [-d|-D] dest",
 		"Move and rename Wii and GameCube ISO images."
 		" Images, WBFS partitions and directories are accepted as source." },
 
@@ -282,7 +299,7 @@
 
   { T_DEF_CMD,	"VERIFY",	"VERIFY|V",
 		    "wit VERIFY [source]...",
-		"Verify ISO images (calculate and compare SHA1 check sums)"
+		"Verify ISO images (calculate and compare SHA1 checksums)"
 		" to find bad dumps." },
 
   { T_DEF_CMD,	"SKELETON",	"SKELETON|SKEL",
@@ -290,7 +307,7 @@
 		"Create very small skeletons of ISO images."
 		" A skeleton contains only disc and partition headers for further"
 		" analysis and is not playable because all files are zeroed."
-		"\1 Read http://wit.wiimm.de/cmd/wit/skel for more details." },
+		"\1 Read https://wit.wiimm.de/cmd/wit/skel for more details." },
 
   { T_DEF_CMD,	"MIX",		"MIX",
 		    "wit MIX SOURCE... --dest|--DEST outfile\n"
@@ -300,7 +317,7 @@
 		    "                  | 'ignore' ruleset\n"
 		    "                  | 'header'\n"
 		    "                  | 'region'\1\n"
-		    "Read http://wit.wiimm.de/cmd/wit/mix for more details.",
+		    "Read https://wit.wiimm.de/cmd/wit/mix for more details.",
 		"Mix the partitions from different sources into one new"
 		" Wii or GameCube disc." },
 
@@ -339,7 +356,9 @@
 
   { T_OPT_G,	"PROGRESS",	"P|progress",
 		0,
-		"Print progress counter independent of verbose level." },
+		"Print progress counter."
+		" If --verbose is set at least twice, printing is enabled too."
+		" If progress is enabled, the default of --dsync is changed."  },
 
   { T_OPT_G,	"SCAN_PROGRESS","scan-progress|scanprogress",
 		0,
@@ -358,6 +377,36 @@
 		" For Windows (CYGWIN) it is a good choice to set @'-E$$'@"
 		" to avoid conflicts with command shell variables." },
 
+  { T_OPT_GO|F_IGNORE,
+		"COLOR",	"color",
+		"[=modus]",
+		"Define the modus for colored text output."
+		" Allowed keywords are:"
+		" @OFF@ or @NO-COLORS@ to disable colors,"
+		" @AUTO@ (default) for automatic detection,"
+		" @ON@ for automatic detection but never @OFF@,"
+		" @8-COLORS@ and @256-COLORS@ for 8 and 256 color support."
+		" Without parameter, @ON@ is used."
+		"\n "
+		" @AUTO@ will enable colorized output only for terminals."
+		" @AUTO@ and @ON@ use environment variable @TERM@"
+		" to find the correct color modus."
+		"\n "
+		" If a command is prefixed by @'C-'@,"
+		" then @--color=ON@ is used implicitly as default." },
+
+  { T_OPT_G|F_IGNORE,
+		"COLOR_256",	"256-colors|256colors",
+		0,
+		"Short cut for {--color=256-colors}:"
+		" Force colorized text with 256 color support." },
+
+  { T_OPT_G|F_IGNORE,
+		"NO_COLOR",	"no-colors|nocolors",
+		0,
+		"Short cut for {--color=off}: Deactivate colorized text."
+		" This is the default, if an output file is not a terminal." },
+
   { T_OPT_GP,	"IO",		"io",
 		"flags",
 		"Setup the IO mode for experiments."
@@ -370,18 +419,26 @@
   { T_OPT_G,	"FORCE",	"f|force",
 		0, "Force operation." },
 
-  { H_OPT_G,	"DIRECT",	"direct",
-		0,
-		"This option allows the tools to use direct file io for some file types."
-		" Therefore the flag @O_DIRECT@ is set while opening files."
-		"\n"
-		">>> DIRECT IO IS EXPERIMENTAL! <<<" },
-
+  { T_OPT_GO,	"DSYNC",	"dsync",
+		"[=mode]",
+		"This option enables the usage of flag O_DSYNC"
+		" when opening a partition at a hard drive for writing."
+		" With activated flag, writing an image is some percent slower,"
+		" but the progress counters are exact again."
+		"\n "
+		" Parameter MODE is optional."
+		" If set, it is one of OFF (disable), ON (enable) or AUTO (default)."
+		" With AUTO, DSYNC is enabled if the progress counters are active."
+		"\n "
+		" This option has only impact, if compiler and operation system"
+		" support the flag O_DSYNC. Linux does." },
 
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
 
   { T_OPT_GMP,	"TITLES",	"T|titles",
-		"file", "Read file for disc titles. -T0 disables titles lookup." },
+		"file",
+		"Read file for disc titles."
+		" @-T/@ disables automatic search for title files." },
 
   { T_OPT_G,	"UTF_8",	"utf-8|utf8",
 		0,
@@ -531,7 +588,7 @@
 		"Add a certificate selection rule."
 		" All certificates that matches the rule set will be fake signed."
 		"\1\n "
-		" See http://wit.wiimm.de/info/file-filter.html"
+		" See https://wit.wiimm.de/info/file-filter.html"
 		" for more details about filters." },
 
   { T_OPT_CM,	"IGNORE",	"i|ignore",
@@ -553,6 +610,11 @@
 		"Detect soft and hard linked source files while composing"
 		" or extracting discs and try to create hard links instead"
 		" of independent copies on the destination file system." },
+
+  { H_OPT_C,	"USER_BIN",	"user-bin|userbin",
+		0, 
+		"Try to detect file '@sys/user.bin@'."
+		" If available, use it like other system files." },
 
   { T_OPT_C,	"NULL",		"0|null",
 		0,
@@ -582,7 +644,7 @@
 		" @ptype@, @#index@, @#<index@, @#<=index@, @#>index@, @#>=index@"
 		" and @#tab_index.part_index@."
 		"\1\n "
-		" See http://wit.wiimm.de/opt/psel for more details." },
+		" See https://wit.wiimm.de/opt/psel for more details." },
 
   { T_OPT_C,	"RAW",		"raw",
 		0, "Abbreviation of {--psel RAW}." },
@@ -593,7 +655,7 @@
 		" One of the following values is allowed:"
 		" @AUTO, NONE, POINT, ID, NAME, INDEX, COMBI@."
 		" The default value is @'AUTO'@."
-		"\1 See http://wit.wiimm.de/opt/pmode for more details." },
+		"\1 See https://wit.wiimm.de/opt/pmode for more details." },
 
   { T_OPT_C,	"FLAT",		"flat",
 		0,
@@ -658,7 +720,7 @@
 		" The disc header, boot.bin, ticket.bin and tmd.bin are"
 		" objects to modify. The option {--modify} selects the objects."
 		"\1\n"
-		"See http://wit.wiimm.de/opt/id for more details." },
+		"See https://wit.wiimm.de/opt/id for more details." },
 
   { T_OPT_CP,	"DISC_ID",	"disc-id|discid",
 		"id",
@@ -669,7 +731,7 @@
 		" to fill the complete entered ID to 6 characters."
 		" Option --disc-id overrides the definition of option {--id}."
 		"\1\n"
-		"See http://wit.wiimm.de/opt/disc-id for more details." },
+		"See https://wit.wiimm.de/opt/disc-id for more details." },
 
   { T_OPT_CP,	"BOOT_ID",	"boot-id|bootid",
 		"id",
@@ -680,7 +742,7 @@
 		" to fill the complete entered ID to 6 characters."
 		" Option --boot-id overrides the definition of option {--id}."
 		"\1\n"
-		"See http://wit.wiimm.de/opt/boot-id for more details." },
+		"See https://wit.wiimm.de/opt/boot-id for more details." },
 
   { T_OPT_CP,	"TICKET_ID",	"ticket-id|ticketid",
 		"id",
@@ -691,7 +753,7 @@
 		" to fill the complete entered ID to 4 characters."
 		" Option --ticket-id overrides the definition of option {--id}."
 		"\1\n"
-		"See http://wit.wiimm.de/opt/ticket-id for more details." },
+		"See https://wit.wiimm.de/opt/ticket-id for more details." },
 
   { T_OPT_CP,	"TMD_ID",	"tmd-id|tmdid",
 		"id",
@@ -702,13 +764,13 @@
 		" to fill the complete entered ID to 4 characters."
 		" Option --tmd-id overrides the definition of option {--id}."
 		"\1\n"
-		"See http://wit.wiimm.de/opt/tmd-id for more details." },
+		"See https://wit.wiimm.de/opt/tmd-id for more details." },
 
   { T_OPT_CP,	"TT_ID",	"tt-id|ttid",
 		"id",
 		"This is a short cut for {--ticket id --tmd id}."
 		" If TICKET and TMD differ, the game will freeze after loading."
-		" So it make sense to change only TICKET and TMD IDs together." },
+		" So it makes only sense to change TICKET and TMD IDs together." },
 
   { T_OPT_CP,	"WBFS_ID",	"wbfs-id|wbfsid",
 		"id",
@@ -721,7 +783,7 @@
 		" to fill the complete entered ID to 6 characters."
 		" Option --wbfs-id overrides the definition of option {--id}."
 		"\1\n"
-		"See http://wit.wiimm.de/opt/wbfs-id for more details." },
+		"See https://wit.wiimm.de/opt/wbfs-id for more details." },
 
   { T_OPT_CP,	"REGION",	"region",
 		"region",
@@ -742,6 +804,32 @@
 		" within TMD. The format is @'HIGH:LOW'@ or @'HIGH-LOW'@ or @'LOW'@."
 		" If only @LOW@ is set than @HIGH@ is assumed as 1 (standard IOS)." },
 
+  { T_OPT_C,	"HTTP",		"http",
+		0,
+		"This $patching$ option replaces 'https' request to 'http'"
+		" in the files 'main.dol' and 'rel/StaticR.rel', if the files exist."
+		" It also replaces the sub-domain 'naswii' to 'nas'." },
+
+  { T_OPT_CP,	"DOMAIN",	"domain",
+		"domain",
+		"This $patching$ option replaces the domain 'nintendowifi.net'"
+		" by the new domain. The length of the new domain must not be"
+		" larger than the old length (16 characters)."
+		"\n "
+		" If the new domain length is not larger than 11,"
+		" then 'gamespy.com' of 'sake.gamespy.com' is replaced too. "
+		" This is a special support for 'Super Smash Bros. Brawl'." },
+
+  { T_OPT_C,	"WIIMMFI",	"wiimmfi",
+		0,
+		"Patch the images for $Wiimmfi$, the new custom server."
+		" It is a short cut for {--http --domain wiimmfi.de}." },
+
+  { H_OPT_C,	"TWIIMMFI",	"twiimmfi",
+		0,
+		"Patch the images for the test custom server."
+		" It is a short cut for {--http --domain test.wiimmfi.de}." },
+
   { T_OPT_CP,	"RM_FILES",	"rm-files|rm-file|rmfiles|rmfile",
 		"ruleset",
 		"This patching option defines filter rules to remove real files"
@@ -750,7 +838,7 @@
 		" The processing order of file options is:"
 		" {--rm-files --zero-files --ignore-files}."
 		"\1\n "
-		" See http://wit.wiimm.de/info/file-filter.html"
+		" See https://wit.wiimm.de/info/file-filter.html"
 		" for more details about file filters." },
 
   { T_OPT_CP,	"ZERO_FILES",	"zero-files|zero-file|zerofiles|zerofile",
@@ -761,7 +849,7 @@
 		" The processing order of file options is:"
 		" {--rm-files --zero-files --ignore-files}."
 		"\1\n "
-		" See http://wit.wiimm.de/info/file-filter.html"
+		" See https://wit.wiimm.de/info/file-filter.html"
 		" for more details about file filters." },
 
   { T_OPT_C,	"OVERLAY",	"overlay",
@@ -795,11 +883,11 @@
 		" $Fake signing$ is not necessary, but the partition becomes invalid,"
 		" because the content of some files is not copied."
 		" If such file is accessed the Wii will halt immediately,"
-		" because the verification of the check sum calculation fails."
+		" because the verification of the checksum calculation fails."
 		" The processing order of file options is:"
 		" {--rm-files --zero-files --ignore-files}."
 		"\1\n "
-		" See http://wit.wiimm.de/info/file-filter.html"
+		" See https://wit.wiimm.de/info/file-filter.html"
 		" for more details about file filters." },
 
   { H_OPT_CP,	"TRIM",		"trim",
@@ -831,6 +919,20 @@
   { T_OPT_CP,	"DEST2",	"D|DEST",
 		"path",
 		"Like {--dest}, but create the directory path automatically." },
+
+  { T_OPT_C,	"AUTO_SPLIT",	"auto-split|autosplit",		// [[split]]
+		0,
+		"Enable auto split modus:"
+		" Split only if necessary and determine the split size automatically."
+		"\n "
+		" THIS OPTION IS EXPERIMENTAL."
+		" In future versions it becomes the default." },
+
+  { T_OPT_C,	"NO_SPLIT",	"no-split|nosplit",		// [[split]]
+		0,
+		"Disable output file splitting."
+		" This is the default, but in future versions,"
+		" the new option {--auto-split} becomes the default." },
 
   { T_OPT_C,	"SPLIT",	"z|split",
 		0,
@@ -868,7 +970,9 @@
 		" the @SMART@ mode is used for ISOs instead." },
 
   { T_OPT_C,	"TRUNC",	"trunc",
-		0, "Truncate a $PLAIN ISO$ images to the needed size while creating." },
+		0,
+		"Truncate $PLAIN ISO$ and $WBFS$ images after creating or copying"
+		" to the minimal needed size with respect to the block size." },
 
   { T_OPT_CP,	"CHUNK_MODE",	"chunk-mode|chunkmode|chm",
 		"mode", TEXT_OPT_CHUNK_MODE("ISO") },
@@ -981,50 +1085,83 @@
 
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
 
-  { T_OPT_C,	"WDF",		"W|wdf",
-		0,
-		"Set ISO output file type to WDF (Wii Disc Format, default)" },
+		// [[wdf2]] use WDFv2 as default.
+  { T_OPT_CO,	"WDF",		"W|wdf",
+		"[=param]",
+		"Set the image output file type to WDF (Wii Disc Format)."
+		" The output format is either WDFv1 or WDFv2."
+		" It depends of the input file format and of the aligning."
+		" {--wdf=param} is a short cut for {--wdf --align-wdf=param}." },
 
- #if WDF2_ENABLED > 1
-
-  { T_OPT_C,	"WDF1",		"wdf1",
-		0,
-		"Set ISO output file type to WDF and force version 1." },
+  { T_OPT_CO,	"WDF1",		"wdf1",
+		"[=param]",
+		"Set image output file type to WDF and force version 1."
+		" {--wdf1=param} is a short cut for {--wdf1 --align-wdf=param}." },
 
   { T_OPT_CO,	"WDF2",		"wdf2",
-		"[=align]",
-		"Set ISO output file type to WDF and force version 2."
-		" {--wdf2=align} is a shortcut for {--wdf2 --wdf-align=align}." },
+		"[=param]",
+		"Set image output file type to WDF and force version 2."
+		" {--wdf2=param} is a short cut for {--wdf2 --align-wdf=param}." },
 
-  { T_OPT_GP,	"WDF_ALIGN",	"wdf-align|wdfalign",
-		"align",
-		"Set the default WDF output version and align factor."
-		" @mode@ must be a power of 2 and smaller or equal than "
-		WDF_MAX_ALIGN_TEXT ". The default WDF alignment is "
-		WDF_ALIGN_TEXT "."
+		// [[2do]] 2014-01: wdf-align is obsolete at 2014-07
+  { T_OPT_GP,	"ALIGN_WDF",	"align-wdf|alignwdf|wdf-align|wdfalign",
+		"[align][,minhole]",
+		"Parameter @align@ defines the aligning factor for new WDF images."
+		" It must be a power of 2 and smaller or equal than "
+		WDF_MAX_ALIGN_TEXT "."
+		" The default WDF alignment is 1 for WDF v1 and "
+		WDF_DEF_ALIGN_TEXT " for WDF v2."
 		" Usual values are 1, 512, 4K and 32K."
-		" Mode 0 set WDF v1, all other modes WDF v2." },
-
- #endif // WDF2_ENABLED > 1
+		"\n "
+		" The optional parameter @minhole@ defines the minimal hole size,"
+		" before a new chunk is created."
+		" If NULL, an internal value is used to minimize the total file size."
+		" @minhole@ can't be smaller than @align@." },
 
   { T_OPT_C,	"ISO",		"I|iso",
-		0, "Set ISO output file type to PLAIN ISO." },
+		0,
+		"Set image output file type to PLAIN ISO." },
 
   { T_OPT_C,	"CISO",		"C|ciso",
-		0, "Set ISO output file type to CISO (Compact ISO, same as WBI)." },
+		0,
+		"Set image output file type to CISO (Compact ISO, same as WBI)." },
 
   { T_OPT_C,	"WBFS",		"B|wbfs",
-		0, "Set ISO output file type to WBFS (Wii Backup File System) container." },
+		0,
+		"Set image output file type to WBFS (Wii Backup File System, default)." },
 
   { T_OPT_CO,	"WIA",		"wia",
 		"[=compr]",
-		"Set ISO output file type to WIA (Wii ISO Archive)."
+		"Set image output file type to WIA (Wii ISO Archive)."
 		" The optional parameter is a compression mode and"
 		" {--wia=mode} is a shortcut for {--wia --compression mode}." },
 
+  { T_OPT_C,	"GCZ",		"G|gcz",
+		0,
+		"Set image output file type to GCZ (Dolphins GameCube Zip)." },
+
+  { T_OPT_G,	"GCZ_ZIP",	"gcz-zip|gczzip|gczip",
+		0,
+		"If creating a GCZ image, a blockwise z-compression is tried."
+		" If the compressed data is larger than 98.5%,"
+		" the uncompressed data is stored."
+		" Encrypted blocks are stored directly as uncompressed data,"
+		" because the 98.5% test fails all the time."
+		"\n "
+		" Option --gcz-zip disables this optimization for encrypted data"
+		" and makes the creation process slower." },
+
+  { T_OPT_GP,	"GCZ_BLOCK",	"gcz-block|gczblock",
+		"size",
+		"The value defines the block size, if creating a GCZ image."
+		" The default is 16K (also Dolphins default)."
+		" Smaller values enlarge the managment data and"
+		" reduce the compression ratio."
+		" Use the option with caution!" },
+
   { T_OPT_C,	"FST",		"fst",
 		0,
-		"Set ISO output mode to 'file system' (extracted ISO)." },
+		"Set image output mode to 'file system' (extracted ISO)." },
 
   { T_OPT_CMP,	"FILES",	"F|files",
 		"ruleset",
@@ -1147,7 +1284,7 @@
   { T_OPT_C,	"SECTIONS",	"sections",
 		0,
 		"Print in machine readable sections and parameter lines."
-		"\1 Read http://wit.wiimm.de/opt/sections for more details." },
+		"\1 Read https://wit.wiimm.de/opt/sections for more details." },
 
   { T_OPT_CP,	"SORT",		"S|sort",
 		"list",
@@ -1188,6 +1325,7 @@
   { T_COPT,	"IGNORE_FST",	0,0,0 },
   { T_COPT,	"IGNORE_SETUP",	0,0,0 },
   { T_COPT,	"LINKS",	0,0,0 },
+  { H_COPT,	"USER_BIN",	0,0,0 },
 
   //---------- wit GROUP FST_SELECT ----------
 
@@ -1248,11 +1386,9 @@
   { T_GRP_BEG,	"OUTMODE_EDIT",	0,0,0 },
 
   { T_COPT,	"WDF",		0,0,0 },
-#if WDF2_ENABLED > 1
   { T_COPT,	"WDF1",		0,0,0 },
   { T_COPT,	"WDF2",		0,0,0 },
-  { T_COPT,	"WDF_ALIGN",	0,0,0 },
-#endif
+  { T_COPT,	"ALIGN_WDF",	0,0,0 },
   { T_COPT,	"ISO",		0,0,0 },
   { T_COPT,	"CISO",		0,0,0 },
   { T_COPT,	"WBFS",		0,0,0 },
@@ -1263,6 +1399,9 @@
 
   { T_COPY_GRP,	"OUTMODE_EDIT",	0,0,0 },
   { T_COPT,	"WIA",		0,0,0 },
+  { T_COPT,	"GCZ",		0,0,0 },
+  { T_COPT,	"GCZ_ZIP",	0,0,0 },
+  { T_COPT,	"GCZ_BLOCK",	0,0,0 },
 
   //---------- wit GROUP OUTMODE_FST ----------
 
@@ -1326,6 +1465,10 @@
   { T_COPT,	"REGION",	0,0,0 },
   { T_COPT,	"COMMON_KEY",	0,0,0 },
   { T_COPT,	"IOS",		0,0,0 },
+  { T_COPT,	"HTTP",		0,0,0 },
+  { T_COPT,	"DOMAIN",	0,0,0 },
+  { T_COPT,	"WIIMMFI",	0,0,0 },
+  { H_COPT,	"TWIIMMFI",	0,0,0 },
   { T_COPT,	"RM_FILES",	0,0,0 },
   { T_COPT,	"ZERO_FILES",	0,0,0 },
 
@@ -1345,6 +1488,8 @@
 
   { T_GRP_BEG,	"SPLIT_CHUNK",	0,0,0 },
 
+  { T_COPT,	"AUTO_SPLIT",	0,0,0 },
+  { T_COPT,	"NO_SPLIT",	0,0,0 },
   { T_COPT,	"SPLIT",	0,0,0 },
   { T_COPT,	"SPLIT_SIZE",	0,0,0 },
   { T_COPT,	"DISC_SIZE",	0,0,0 },
@@ -1361,6 +1506,9 @@
 
   { T_CMD_BEG,	"VERSION",	0,0,0 },
 
+  { T_COPT,	"BRIEF",	0,0,
+	"Print only the version number, revision and system."
+	" If set twice, print only the version number." },
   { T_COPT,	"SECTIONS",	0,0,0 },
   { T_COPT,	"LONG",		0,0,
 	"Print in long format. Ignored if option {--sections} is set." },
@@ -1377,6 +1525,7 @@
   { T_CMD_BEG,	"INFO",		0,0,0 },
 
   { T_COPT,	"SECTIONS",	0,0,0 },
+  { T_COPT,	"LONG",		0,0, CMD_INFO_LONG },
 
   //---------- COMMAND wit TEST ----------
 
@@ -1407,6 +1556,17 @@
 	"Print always compression level and chunk size factor."
 	" Standard is to suppress these values if not explicitly set." },
   { T_COPT,	"NUMERIC",	0,0,0 },
+
+  //---------- COMMAND wit FEATURES ----------
+
+  { T_CMD_BEG,	"FEATURES",	0,0,0 },
+
+  { T_COPT,	"QUIET",	0,0,
+	"If set, suppress messages about the single features."
+	" If set twice, suppress also the summary message." },
+  { T_COPT,	"VERBOSE",	0,0,
+	"Normally, a status line for each supported feature is printed."
+	" If set, print an info line for each requested feature." },
 
   //---------- COMMAND wit ANAID ----------
 
@@ -1440,7 +1600,7 @@
 	"Filter the certificates by rules."
 	" Therefor the certificate name is build in the form 'issuer.keyid'."
 	"\1\n "
-	" See http://wit.wiimm.de/info/file-filter.html"
+	" See https://wit.wiimm.de/info/file-filter.html"
 	" for more details about filters." },
   { T_COPT_M,	"FAKE_SIGN",	0,0,0 },
   { T_COPT,	"DEST",		0,0,
@@ -1568,6 +1728,23 @@
   //---------- COMMAND wit ID6 ----------
 
   { T_CMD_BEG,	"ID6",		0,0,0 },
+
+  { T_COPT,	"AUTO",		0,0,0 },
+  { T_COPY_GRP,	"XSOURCE",	0,0,0 },
+  { T_COPY_GRP,	"FST_OPTIONS",	0,0,0 },
+
+  { T_COPT_M,	"LOGGING",	0,0,0 },
+  { T_COPT_M,	"LONG",		0,0,
+	"If set, a table with 5 IDs (DISC, BOOT, TICKET, TMD and WBFS) is printed."
+	" BOOT, TICKET and TMD IDs are taken from the main partition."
+	" If set twice, all IDs of all partitions are printed." },
+
+  { T_SEP_OPT,	0,0,0,0 },
+  { T_COPY_GRP,	"PATCH_ID",	0,0,0 },
+
+  //---------- COMMAND wit ID8 ----------
+
+  { T_CMD_BEG,	"ID8",		0,0,0 },
 
   { T_COPT,	"AUTO",		0,0,0 },
   { T_COPY_GRP,	"XSOURCE",	0,0,0 },
@@ -1837,6 +2014,12 @@
 
   { T_COPY_GRP,	"PARTITIONS",	0,0,0 },
   { T_COPY_GRP,	"PATCH",	0,0,0 },
+  { T_COPT,	"WDF1",		0,0,
+	"If the image format is WDF, then force WDF version 1."
+	" The optional aligning factor is ignored." },
+  { T_COPT,	"WDF2",		0,0,
+	"If the image format is WDF, then force WDF version 2."
+	" The optional aligning factor is ignored." },
 
   //---------- COMMAND wit IMGFILES ----------
 

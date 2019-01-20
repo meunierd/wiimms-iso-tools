@@ -9,14 +9,14 @@
 ##                      \/  \/     |_|    |_|                      ##
 ##                                                                 ##
 ##                        Wiimms ISO Tools                         ##
-##                      http://wit.wiimm.de/                       ##
+##                      https://wit.wiimm.de/                       ##
 ##                                                                 ##
 #####################################################################
 ##                                                                 ##
 ##   This file is part of the WIT project.                         ##
-##   Visit http://wit.wiimm.de/ for project details and sources.   ##
+##   Visit https://wit.wiimm.de/ for project details and sources.   ##
 ##                                                                 ##
-##   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>      ##
+##   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>      ##
 ##                                                                 ##
 #####################################################################
 
@@ -26,6 +26,8 @@
 
 #-------------------------------------------------------------------------------
 # global settings
+
+MYMAKE			:= $(lastword $(MAKEFILE_LIST))
 
 #SHELL			= /bin/bash
 SHELL			= /usr/bin/env bash
@@ -43,29 +45,29 @@ WDF_LONG		= Wiimms WDF Tool
 WFUSE_SHORT		= wfuse
 WFUSE_LONG		= Wiimms FUSE Tool
 
-VERSION_NUM		= 2.24a
+VERSION_NUM		= 3.02a
 BETA_VERSION		= 0
 			# 0:off  -1:"beta"  >0:"beta#"
 
-URI_HOME		= http://wit.wiimm.de/
-URI_DOWNLOAD		= http://wit.wiimm.de/download
-URI_FILE		= http://wit.wiimm.de/file
+URI_HOME		= https://wit.wiimm.de/
+URI_DOWNLOAD		= https://wit.wiimm.de/download
+URI_FILE		= https://wit.wiimm.de/file
 
 ifeq ($(BETA_VERSION),0)
   URI_REPOS		= http://opensvn.wiimm.de/wii/trunk/wiimms-iso-tools/
-  URI_VIEWVC		= http://wit.wiimm.de/r/viewvc
+  URI_VIEWVC		= https://wit.wiimm.de/r/viewvc
 else
   URI_REPOS		= http://opensvn.wiimm.de/wii/branches/public/wiimms-iso-tools/
-  URI_VIEWVC		= http://wit.wiimm.de/r/viewvc-beta
+  URI_VIEWVC		= https://wit.wiimm.de/r/viewvc-beta
 endif
 
-URI_WDF			= http://wit.wiimm.de/r/wdf
-URI_CISO		= http://wit.wiimm.de/r/ciso
-URI_QTWITGUI		= http://wit.wiimm.de/r/qtwitgui
-URI_WIIBAFU		= http://wit.wiimm.de/r/wiibafu
-#URI_WCDWM		= http://wit.wiimm.de/r/wcdwm
-#URI_WIIJMANAGER	= http://wit.wiimm.de/r/wiijman
-URI_MACWITGUI		= http://wit.wiimm.de/r/mac-witgui
+URI_WDF			= https://wit.wiimm.de/r/wdf
+URI_CISO		= https://wit.wiimm.de/r/ciso
+URI_QTWITGUI		= https://wit.wiimm.de/r/qtwitgui
+URI_WIIBAFU		= https://wit.wiimm.de/r/wiibafu
+#URI_WCDWM		= https://wit.wiimm.de/r/wcdwm
+#URI_WIIJMANAGER	= https://wit.wiimm.de/r/wiijman
+URI_MACWITGUI		= https://wit.wiimm.de/r/mac-witgui
 URI_GBATEMP		= http://gbatemp.net/index.php?showtopic=182236\#entry2286365
 URI_DOWNLOAD_I386	= $(URI_DOWNLOAD)/$(DISTRIB_I386)
 URI_DOWNLOAD_X86_64	= $(URI_DOWNLOAD)/$(DISTRIB_X86_64)
@@ -73,14 +75,25 @@ URI_DOWNLOAD_MAC	= $(URI_DOWNLOAD)/$(DISTRIB_MAC)
 URI_DOWNLOAD_CYGWIN	= $(URI_DOWNLOAD)/$(DISTRIB_CYGWIN)
 URI_TITLES		= http://gametdb.com/titles.txt
 
-DOWNLOAD_DIR		= /cygdrive/n/www/wit.wiimm.de/download
-
+DOWNLOAD_DIR		= /n/www/wit.wiimm.de/download
+EXPORT_DIR		= /cygdrive/n/wit/wiimms-iso-tools/bin
 
 DUMMY			:= $(shell $(SHELL) ./setup.sh)
 include Makefile.setup
 
+#------------------------------------------------------------------------------
 # format for logging messages, $1=job, $2=object, $3=more info
-LOGFORMAT		:= *** %7s %-17s %s\n
+
+LOGFORMAT		:= \33[36;1m*** %7s %-17s %s\33[0m\n
+LOGFORMAT_CC		:= \33[33;1m*** %7s %-17s %s\33[0m\n
+LOGFORMAT_TOOL		:= \33[35;1m*** %7s %-17s %s\33[0m\n
+LOGFORMAT_INST		:= \33[32;1m*** %7s %-17s %s\33[0m\n
+
+#------------------------------------------------------------------------------
+# include source library definitions
+
+DCLIB_MYSQL := 0
+include ./dclib/Makefile.inc
 
 #-------------------------------------------------------------------------------
 # version+beta settings
@@ -147,11 +160,7 @@ RM_FILES	+= $(ALL_TOOLS_X) $(HELPER_TOOLS) $(WDF_LINKS) $(WDF_TEST_LINKS)
 #-------------------------------------------------------------------------------
 # tool dependent options and objects
 
-ifeq ($(STATIC),1)
-    OPT_STATIC	:= -static
-else
-    OPT_STATIC	:=
-endif
+OPT_STATIC	:=
 
 #---------------
 
@@ -184,9 +193,12 @@ LZMA_OBJ	= $(patsubst %.c,%.o,$(LZMA_SRC))
 ifeq ($(SYSTEM),cygwin)
   LZMA_FLAGS	= -Wno-unused-but-set-variable
   BZIP2_FLAGS	= -Wno-maybe-uninitialized
+else ifeq ($(SYSTEM),mac)
+  LZMA_FLAGS	= 
+  BZIP2_FLAGS	= 
 else
-  LZMA_FLAGS	=
-  BZIP2_FLAGS	=
+  LZMA_FLAGS	= -Wno-unused-but-set-variable
+  BZIP2_FLAGS	= -Wno-maybe-uninitialized
 endif
 
 # lib summary
@@ -223,13 +235,21 @@ RM_FILES2	+= $(TEXT_FILES)
 MAIN_TOOLS_OBJ	:= $(patsubst %,%.o,$(MAIN_TOOLS) $(EXTRA_TOOLS))
 OTHER_TOOLS_OBJ	:= $(patsubst %,%.o,$(TEST_TOOLS) $(HELPER_TOOLS))
 
+# dclib
+DCLIB_DIR	:= ./dclib
+DIR_LIST	+= $(DCLIB_DIR)
+VPATH		+= $(DCLIB_DIR)
+CFLAGS		+= -I$(DCLIB_DIR)
+
 # other objects
-WIT_O		:= debug.o lib-std.o lib-file.o lib-sf.o \
+WIT_O		:= lib-std.o lib-file.o lib-sf.o \
 		   lib-bzip2.o lib-lzma.o \
-		   lib-wdf.o lib-wia.o lib-ciso.o \
-		   ui.o iso-interface.o wbfs-interface.o patch.o \
+		   lib-wdf.o lib-wia.o lib-ciso.o lib-gcz.o \
+		   iso-interface.o wbfs-interface.o patch.o \
 		   titles.o match-pattern.o dclib-utf8.o \
-		   sha1dgst.o sha1_one.o
+		   sha1dgst.o sha1_one.o \
+		   $(DCLIB_O)
+
 LIBWBFS_O	:= tools.o file-formats.o libwbfs.o wiidisc.o cert.o rijndael.o
 
 ifeq ($(SYSTEM),cygwin)
@@ -277,7 +297,9 @@ CFLAGS		+= -fomit-frame-pointer -fno-strict-aliasing -funroll-loops
 CFLAGS		+= -Wall -Wno-parentheses -Wno-unused-function
 #CFLAGS		+= -O3 -Isrc/libwbfs -Isrc/lzma -Isrc -I$(UI) -I. -Iwork
 CFLAGS		+= -O3 -Isrc/libwbfs -Isrc -I$(UI) -I. -Iwork
-ifeq ($(SYSTEM),mac)
+ifeq ($(SYSTEM),cygwin)
+  CFLAGS	+= -Wno-format-truncation
+else ifeq ($(SYSTEM),mac)
  CFLAGS		+= -I/usr/local/include
 endif
 CFLAGS		+= $(XFLAGS)
@@ -287,7 +309,10 @@ DEPFLAGS	+= -MMD
 
 LDFLAGS		:= $(strip $(LDFLAGS))
 
-LIBS		+= $(XLIBS)
+ifeq ($(HAVE_ZLIB),1)
+ LIBS		+= -lz
+endif
+LIBS		+= -lm -lncurses $(XLIBS)
 
 DISTRIB_RM	= ./wit-v$(VERSION)-r
 DISTRIB_BASE	= wit-v$(VERSION)-r$(REVISION_NEXT)
@@ -340,7 +365,7 @@ default_rule: all
 # general rules
 
 $(ALL_TOOLS_X): %: %.o $(ALL_OBJECTS) $(TOBJ_ALL) Makefile | $(HELPER_TOOLS)
-	@printf "$(LOGFORMAT)" tool "$@" "$(MODE) $(TOPT_$@) $(TOBJ_$@)"
+	@printf "$(LOGFORMAT_TOOL)" tool "$@" "$(MODE) $(TOPT_$@) $(TOBJ_$@)"
 	@$(CC) $(CFLAGS) $(DEFINES) $(LDFLAGS) $@.o \
 		$(ALL_OBJECTS) $(TOBJ_$@) $(LIBS) $(TOPT_$@) -o $@
 	@if test -f $@.exe; then $(STRIP) $@.exe; else $(STRIP) $@; fi
@@ -353,32 +378,32 @@ $(ALL_TOOLS_X): %: %.o $(ALL_OBJECTS) $(TOBJ_ALL) Makefile | $(HELPER_TOOLS)
 #--------------------------
 
 $(HELPER_TOOLS): %: %.o $(ALL_OBJECTS) $(UI_TABS) Makefile
-	@printf "$(LOGFORMAT)" helper "$@ $(TOBJ_$@)" "$(MODE)"
+	@printf "$(LOGFORMAT_TOOL)" helper "$@ $(TOBJ_$@)" "$(MODE)"
 	@$(CC) $(CFLAGS) $(DEFINES) $(LDFLAGS) $@.o \
 		$(ALL_OBJECTS) $(TOBJ_$@) $(LIBS) -o $@
 
 #--------------------------
 
 $(WDF_LINKS): wdf
-	@printf "$(LOGFORMAT)" "link" "wdf -> $@" ""
+	@printf "$(LOGFORMAT_INST)" "link" "wdf -> $@" ""
 	@ln -f wdf "$@"
 
 #--------------------------
 
 $(UI_OBJECTS): %.o: %.c ui-%.c ui-%.h version.h Makefile
-	@printf "$(LOGFORMAT)" +object "$@" "$(MODE)"
+	@printf "$(LOGFORMAT_CC)" +object "$@" "$(MODE)"
 	@$(CC) $(CFLAGS) $(DEPFLAGS) $(DEFINES) -c $< -o $@
 
 #--------------------------
 
 $(C_OBJECTS): %.o: %.c version.h Makefile $(TEXT_FILES)
-	@printf "$(LOGFORMAT)" object "$@" "$(MODE)"
+	@printf "$(LOGFORMAT_CC)" object "$@" "$(MODE)"
 	@$(CC) $(CFLAGS) $(DEPFLAGS) $(DEFINES) -c $< -o $@
 
 #--------------------------
 
 $(ASM_OBJECTS): %.o: %.S Makefile
-	@printf "$(LOGFORMAT)" asm "$@" "$(MODE)"
+	@printf "$(LOGFORMAT_CC)" asm "$@" "$(MODE)"
 	@$(CC) $(CFLAGS) $(DEPFLAGS) $(DEFINES) -c $< -o $@
 
 #--------------------------
@@ -397,7 +422,7 @@ $(TEXT_FILES): $(GEN_TEXT_FILE) $(TEXT_DIR)/$@
 
 #--------------------------
 
-$(UI_FILES): gen-ui.c tab-ui.c ui.h $(UI_TABS) | gen-ui
+$(UI_FILES): gen-ui.c ui.h $(UI_TABS) | gen-ui
 	@printf "$(LOGFORMAT)" run gen-ui ""
 	@./gen-ui
 
@@ -411,11 +436,11 @@ ui : gen-ui
 # lib specific rules
 
 $(LIBBZ2_OBJ): %.o: %.c Makefile
-	@printf "$(LOGFORMAT)" object "$(subst src/libbz2/,,$@)" "$(MODE) [libbz2]"
+	@printf "$(LOGFORMAT_CC)" object "$(subst src/libbz2/,,$@)" "$(MODE) [libbz2]"
 	@$(CC) $(CFLAGS) $(DEPFLAGS) $(BZIP2_FLAGS) $(DEFINES) -c $< -o $@
 
 $(LZMA_OBJ): %.o: %.c Makefile
-	@printf "$(LOGFORMAT)" object "$(subst src/lzma/,,$@)" "$(MODE) [lzma]"
+	@printf "$(LOGFORMAT_CC)" object "$(subst src/lzma/,,$@)" "$(MODE) [lzma]"
 	@$(CC) $(CFLAGS) $(DEPFLAGS) $(LZMA_FLAGS) $(DEFINES) -c $< -o $@
 
 #
@@ -447,6 +472,7 @@ chmod:
 	@for d in $(DIR_LIST); do test -d "$$d" && chmod 775 "$$d"; done
 	@find . -name '*.sh' -exec chmod 775 {} +
 	@for t in $(ALL_TOOLS_X); do test -f "$$t" && chmod 775 "$$t"; done || true
+	@chmod 664 src/*.[hc] src/*/*.[hc] dclib/*.[hc]
 
 #
 #--------------------------
@@ -472,16 +498,26 @@ clean:
 	@printf "$(LOGFORMAT)" rm "output files + distrib" ""
 	@rm -f $(RM_FILES)
 	@rm -fr $(DISTRIB_RM)*
+	@cd dclib && rm -f $(DCLIB_PRIVATE)
 
-.PHONY : clean+
-clean+: clean
+.PHONY : c+ clean+
+c+ clean+: clean
 	@printf "$(LOGFORMAT)" rm "test files + template output" ""
 	@rm -f $(RM_FILES2)
 	-@rm -fr doc
 
-.PHONY : clean++
-clean++: clean+
+.PHONY : c++ clean++
+c++ clean++: clean+
 	@test -d .svn && svn st | sort -k2 || true
+
+#
+#--------------------------
+
+.PHONY: dclib
+dclib:
+	@echo "DCLIB_MYSQL=$(DCLIB_MYSQL)"
+	@echo "DCLIB_FLAGS=$(DCLIB_FLAGS)"
+	@echo "DCLIB_O=$(DCLIB_O)"
 
 #
 #--------------------------
@@ -606,7 +642,6 @@ gen-doc:
 	@printf "$(LOGFORMAT)" create documentation ""
 	@chmod ug+x $(GEN_TEMPLATE)
 	@$(GEN_TEMPLATE)
-	@cp -p doc/WDF.txt .
 
 #
 #--------------------------
@@ -658,7 +693,7 @@ ifeq ($(SYSTEM_LINUX),1)
 	@M32=1 $(MAKE) --no-print-directory clean+ install
 
 ifeq ($(HAVE_INSTBIN_32),1)
-	@printf "$(LOGFORMAT)" copy "$(INSTBIN)/* to $(INSTBIN_32)"
+	@printf "$(LOGFORMAT_INST)" copy "$(INSTBIN)/* to $(INSTBIN_32)"
 	@for f in $(BIN_FILES); do [[ -f $(INSTBIN)/$$f ]] \
 		&& cp -p $(INSTBIN)/$$f $(INSTBIN_32); done; true
 	@for f in $(WDF_LINKS); do ln -f $(INSTBIN_32)/wdf $(INSTBIN_32)/$$f; done
@@ -666,10 +701,10 @@ endif
 
 	@printf "\n---------- BUILDING LINUX/X86_64 ----------\n\n"
 	@for t in $(ALL_TOOLS_X); do rm -f bin/$$t; done
-	@$(MAKE) --no-print-directory clean+ install
+	@$(MAKE) --no-print-directory clean+ install doc
 
 ifeq ($(HAVE_INSTBIN_64),1)
-	@printf "$(LOGFORMAT)" copy "$(INSTBIN)/* to $(INSTBIN_64)"
+	@printf "$(LOGFORMAT_INST)" copy "$(INSTBIN)/* to $(INSTBIN_64)"
 	@for f in $(BIN_FILES); do [[ -f $(INSTBIN)/$$f ]] \
 		&& cp -p $(INSTBIN)/$$f $(INSTBIN_64); done; true
 	@for f in $(WDF_LINKS); do ln -f $(INSTBIN_64)/wdf $(INSTBIN_64)/$$f; done
@@ -984,6 +1019,10 @@ help:
 	@echo  ""
 	@echo  " make help	print this help"
 	@echo  ""
+	@echo  "-------------------------------------------------------------------------------"
+	@awk -F: '/^.PHONY/ { gsub(/[[:blank:]]*/,"",$$2); print $$2}' $(MYMAKE) \
+		| sort | pr -5T -w80
+	@echo  "-------------------------------------------------------------------------------"
 
 #
 ###############################################################################

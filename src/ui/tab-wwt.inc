@@ -9,12 +9,12 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
  *   Copyright (c) 2009-2012 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
@@ -70,7 +70,11 @@
 		0 /* copy of wit */ },
 
   { T_DEF_CMD,	"COMPR",	"COMPR",
-		    "wwt ERROR [error_code]",
+		    "wwt COMPR [error_code]",
+		0 /* copy of wit */ },
+
+  { T_DEF_CMD,	"FEATURES",	"FEATURES",
+		    "wwt FEATURES [error_code]",
 		0 /* copy of wit */ },
 
   { T_DEF_CMD,	"EXCLUDE",	"EXCLUDE",
@@ -206,24 +210,24 @@
   { T_SEP_CMD,	0,0,0,0 }, //----- separator -----
 
   { T_DEF_CMD,	"ADD",		"ADD|A",
-		    "wwt ADD [[--source] source]... [--recurse source]...",
+		    "wwt ADD [[--source|--recurse] source]...",
 		"Add Wii and GameCube ISO discs to WBFS partitions."
 		" Images, WBFS partitions and directories are accepted as source." },
 
   { T_DEF_CMD,	"UPDATE",	"UPDATE|U",
-		    "wwt UPDATE [[--source] source]... [--recurse source]...",
+		    "wwt UPDATE [[--source|--recurse] source]...",
 		"Add missing Wii and GameCube ISO discs to WBFS partitions."
 		" Images, WBFS partitions and directories are accepted as source."
 		" 'UPDATE' is a shortcut for {ADD --update}." },
 
   { T_DEF_CMD,	"NEW",		"NEW|N",
-		    "wwt NEW [[--source] source]... [--recurse source]...",
+		    "wwt NEW [[--source|--recurse] source]...",
 		"Add missing and newer Wii and GameCube ISO discs to WBFS partitions."
 		" Images, WBFS partitions and directories are accepted as source."
 		" 'NEW' is a shortcut for {ADD --update --newer}." },
 
   { T_DEF_CMD,	"SYNC",		"SYNC",
-		    "wwt SYNC [[--source] source]... [--recurse source]...",
+		    "wwt SYNC [[--source|--recurse] source]...",
 		"Modify primary WBFS (REMOVE and ADD)"
 		" until it contains exactly the same discs as all sources together."
 		" Images, WBFS partitions and directories are accepted as source."
@@ -252,8 +256,9 @@
 		"Remove discs from WBFS partitions." },
 
   { T_DEF_CMD,	"RENAME",	"RENAME|REN",
-		    "wwt RENAME id6=[new][,title]...",
-		"Rename the ID6 of WBFS discs. Disc title can also be set." },
+		    "wwt RENAME SELECTOR=[new_id6][,new_title]...\n"
+		    "SELECTOR := ID6 | '#'SLOT | INDEX",
+		"Rename the ID6 and/or the disc title of WBFS discs." },
 
   { T_DEF_CMD,	"SETTITLE",	"SETTITLE|ST",
 		    "wwt SETTITLE id6=title...",
@@ -265,7 +270,7 @@
 
   { T_DEF_CMD,	"VERIFY",	"VERIFY|V",
 		    "wwt VERIFY [id6]...",
-		"Verify all discs of WBFS (calculate and compare SHA1 check sums)"
+		"Verify all discs of WBFS (calculate and compare SHA1 checksums)"
 		" to find bad dumps." },
 
   { T_DEF_CMD,	"SKELETON",	"SKELETON|SKEL",
@@ -273,7 +278,7 @@
 		"Create very small skeletons of ISO images."
 		" A skeleton contains only disc and partition headers for further"
 		" analysis and is not playable because all files are zeroed."
-		"\1 Read http://wit.wiimm.de/cmd/wwt/skel for more details." },
+		"\1 Read https://wit.wiimm.de/cmd/wwt/skel for more details." },
 
   { T_SEP_CMD,	0,0,0,0 }, //----- separator -----
 
@@ -314,10 +319,22 @@
   { T_OPT_GP,	"ESC",		"E|esc",
 		0, 0 /* copy of wit */ },
 
+  { T_OPT_GO|F_IGNORE,
+		"COLOR",	"color",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_G|F_IGNORE,
+		"COLOR_256",	"256-colors|256colors",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_G|F_IGNORE,
+		"NO_COLOR",	"no-colors|nocolors",
+		0, 0 /* copy of wit */ },
+
   { T_OPT_GP,	"IO",		"io",
 		0, 0 /* copy of wit */ },
 
-  { H_OPT_G,	"DIRECT",	"direct",
+  { T_OPT_GO,	"DSYNC",	"dsync",
 		0, 0 /* copy of wit */ },
 
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
@@ -424,6 +441,9 @@
   { T_OPT_C,	"LINKS",	"links",
 		0, 0 /* copy of wit */ },
 
+  { H_OPT_C,	"USER_BIN",	"user-bin|userbin",
+		0, 0 /* copy of wit */ },
+
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
 
   { T_OPT_CP,	"PMODE",	"pmode",
@@ -483,6 +503,18 @@
   { T_OPT_CP,	"IOS",		"ios",
 		0, 0 /* copy of wit */ },
 
+  { T_OPT_C,	"HTTP",		"http",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_CP,	"DOMAIN",	"domain",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_C,	"WIIMMFI",	"wiimmfi",
+		0, 0 /* copy of wit */ },
+
+  { H_OPT_C,	"TWIIMMFI",	"twiimmfi",
+		0, 0 /* copy of wit */ },
+
   { T_OPT_CP,	"RM_FILES",	"rm-files|rm-file|rmfiles|rmfile",
 		0, 0 /* copy of wit */ },
 
@@ -516,6 +548,12 @@
   { T_OPT_CP,	"DEST2",	"D|DEST",
 		0, 0 /* copy of wit */ },
 
+  { T_OPT_C,	"AUTO_SPLIT",	"auto-split|autosplit",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_C,	"NO_SPLIT",	"no-split|nosplit",
+		0, 0 /* copy of wit */ },
+
   { T_OPT_C,	"SPLIT",	"z|split",
 		0, 0 /* copy of wit */ },
 
@@ -530,11 +568,6 @@
 
   { T_OPT_C,	"TRUNC",	"trunc",
 		0, 0 /* copy of wit */ },
-
-  // [[2do]] [obsolte] hidden since 2011-10, remove it in 2012
-  { H_OPT_C,	"FAST",		"fast",
-		0,
-		"Ignored. Don't use this option because it will be discontinued." },
 
   { T_OPT_CP,	"CHUNK_MODE",	"chunk-mode|chunkmode|chm",
 		0, 0 /* copy of wit */ },
@@ -632,23 +665,29 @@
 
   { T_SEP_OPT,	0,0,0,0 }, //----- separator -----
 
-  { T_OPT_C,	"WDF",		"W|wdf",
+  { T_OPT_CO,	"WDF",		"W|wdf",
 		0, 0 /* copy of wit */ },
 
- #if WDF2_ENABLED > 1
-
-  { T_OPT_C,	"WDF1",		"wdf1",
+  { T_OPT_CO,	"WDF1",		"wdf1",
 		0, 0 /* copy of wit */ },
 
   { T_OPT_CO,	"WDF2",		"wdf2",
 		0, 0 /* copy of wit */ },
 
-  { T_OPT_GP,	"WDF_ALIGN",	"wdf-align|wdfalign",
+		// [[2do]] 2014-01: wdf-align is obsolete at 2014-07
+  { T_OPT_GP,	"ALIGN_WDF",	"align-wdf|alignwdf|wdf-align|wdfalign",
 		0, 0 /* copy of wit */ },
 
- #endif // WDF2_ENABLED > 1
-
   { T_OPT_CO,	"WIA",		"wia",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_C,	"GCZ",		"gcz",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_C,	"GCZ_ZIP",	"gcz-zip|gczzip|gczip",
+		0, 0 /* copy of wit */ },
+
+  { T_OPT_GP,	"GCZ_BLOCK",	"gcz-block|gczblock",
 		0, 0 /* copy of wit */ },
 
   { T_OPT_C,	"ISO",		"I|iso",
@@ -774,6 +813,7 @@
   { T_COPT,	"IGNORE_FST",	0,0,0 },
   { T_COPT,	"IGNORE_SETUP",	0,0,0 },
   { T_COPT,	"LINKS",	0,0,0 },
+  { H_COPT,	"USER_BIN",	0,0,0 },
 
   //---------- wwt GROUP EXCLUDE ----------
 
@@ -838,11 +878,9 @@
   { T_GRP_BEG,	"OUTMODE_EDIT",	0,0,0 },
 
   { T_COPT,	"WDF",		0,0,0 },
-#if WDF2_ENABLED > 1
-  { T_COPT,	"WDF1",		0,0,0 },
-  { T_COPT,	"WDF2",		0,0,0 },
-  { T_COPT,	"WDF_ALIGN",	0,0,0 },
-#endif
+  { H_COPT,	"WDF1",		0,0,0 },
+  { H_COPT,	"WDF2",		0,0,0 },
+  { H_COPT,	"ALIGN_WDF",	0,0,0 },
   { T_COPT,	"ISO",		0,0,0 },
   { T_COPT,	"CISO",		0,0,0 },
   { T_COPT,	"WBFS",		0,0,0 },
@@ -853,6 +891,9 @@
 
   { T_COPY_GRP,	"OUTMODE_EDIT",	0,0,0 },
   { T_COPT,	"WIA",		0,0,0 },
+  { T_COPT,	"GCZ",		0,0,0 },
+  { T_COPT,	"GCZ_ZIP",	0,0,0 },
+  { T_COPT,	"GCZ_BLOCK",	0,0,0 },
   { T_COPT,	"FST",		0,0,0 },
 
   //---------- wwt GROUP PARTITIONS ----------
@@ -891,6 +932,10 @@
   { T_COPT,	"REGION",	0,0,0 },
   { T_COPT,	"COMMON_KEY",	0,0,0 },
   { T_COPT,	"IOS",		0,0,0 },
+  { T_COPT,	"HTTP",		0,0,0 },
+  { T_COPT,	"DOMAIN",	0,0,0 },
+  { T_COPT,	"WIIMMFI",	0,0,0 },
+  { H_COPT,	"TWIIMMFI",	0,0,0 },
   { T_COPT,	"RM_FILES",	0,0,0 },
   { T_COPT,	"ZERO_FILES",	0,0,0 },
 
@@ -910,6 +955,8 @@
 
   { T_GRP_BEG,	"SPLIT_CHUNK",	0,0,0 },
 
+  { T_COPT,	"AUTO_SPLIT",	0,0,0 },
+  { T_COPT,	"NO_SPLIT",	0,0,0 },
   { T_COPT,	"SPLIT",	0,0,0 },
   { T_COPT,	"SPLIT_SIZE",	0,0,0 },
   { T_COPT,	"DISC_SIZE",	0,0,0 },
@@ -942,6 +989,7 @@
   { T_CMD_BEG,	"INFO",		0,0,0 },
 
   { T_COPT,	"SECTIONS",	0,0,0 },
+  { T_COPT,	"LONG",		0,0, CMD_INFO_LONG },
 
   //---------- COMMAND wwt TEST ----------
 
@@ -971,6 +1019,17 @@
 	"Print always compression level and chunk size factor."
 	" Standard is to suppress these values if not explicitly set." },
   { T_COPT,	"NUMERIC",	0,0,0 },
+
+  //---------- COMMAND wwt FEATURES ----------
+
+  { T_CMD_BEG,	"FEATURES",	0,0,0 },
+
+  { T_COPT,	"QUIET",	0,0,
+	"If set, suppress messages about the single features."
+	" If set twice, suppress also the summary message." },
+  { T_COPT,	"VERBOSE",	0,0,
+	"Normally, a status line for each supported feature is printed."
+	" If set, print an info line for each requested feature." },
 
   //---------- COMMAND wwt EXCLUDE ----------
 
@@ -1145,6 +1204,7 @@
   { T_COPY_GRP,	"TITLES",	0,0,0 },
   { T_COPY_GRP,	"READ_WBFS",	0,0,0 },
 
+  { T_COPT,	"SECTIONS",	0,0,0 },
   { T_COPT,	"QUIET",	0,0,0 },
   { T_COPT,	"VERBOSE",	0,0,
 	"Be verbose."
@@ -1328,6 +1388,7 @@
   { T_COPY_GRP,	"OUTMODE",	0,0,0 },
   { T_COPY_GRP,	"FST_SELECT",	0,0,0 },
   { T_COPT,	"LINKS",	0,0,0 },
+  { H_COPT,	"USER_BIN",	0,0,0 },
 
   { T_SEP_OPT,	0,0,0,0 },
 
@@ -1339,7 +1400,6 @@
   { T_COPT,	"UPDATE",	0,0,0 },
   { T_COPT,	"OVERWRITE",	0,0,0 },
   { T_COPT,	"TRUNC",	0,0,0 },
-  { H_COPT,	"FAST",		0,0,0 },
 
 
   //---------- COMMAND wwt SCRUB ----------

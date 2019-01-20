@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -49,6 +49,7 @@
 #include <stdarg.h>
 #include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 
 #if defined(__CYGWIN__)
   #include <cygwin/fs.h>
@@ -59,9 +60,9 @@
   #include <linux/fs.h>
 #endif
 
-#include "debug.h"
+#include "dclib/dclib-debug.h"
 #include "version.h"
-#include "types.h"
+#include "dclib/dclib-types.h"
 #include "lib-sf.h"
 #include "lib-std.h"
 #include "match-pattern.h"
@@ -105,7 +106,7 @@ static enumError gen_wdf ( ccp fname )
     SuperFile_t sf;
     InitializeSF(&sf);
 
-    enumError stat = CreateFile(&sf.f,fname,IOM_IS_IMAGE,1);
+    enumError stat = CreateWFile(&sf.f,fname,IOM_IS_IMAGE,1);
     if (stat)
 	return stat;
 
@@ -188,15 +189,15 @@ static void test_string_field()
 
 static void test_create_file()
 {
-    File_t f;
-    InitializeFile(&f);
+    WFile_t f;
+    InitializeWFile(&f);
 
-    CreateFile(&f,"pool/hallo.tmp",IOM_NO_STREAM,1);
-    SetupSplitFile(&f,OFT_PLAIN,0x80);
+    CreateWFile(&f,"pool/hallo.tmp",IOM_NO_STREAM,1);
+    SetupSplitWFile(&f,OFT_PLAIN,0x80);
     WriteAtF(&f,0x150,"Hallo\n",6);
     printf("*** created -> press ENTER: "); fflush(stdout); getchar();
 
-    CloseFile(&f,1);
+    CloseWFile(&f,1);
     printf("*** closed -> press ENTER: "); fflush(stdout); getchar();
 }
 
@@ -207,11 +208,11 @@ static void test_create_file()
 
 static void test_create_sparse_file()
 {
-    File_t f;
-    InitializeFile(&f);
-    CreateFile(&f,"/cygdrive/d/sparse.tmp",IOM_NO_STREAM,1);
+    WFile_t f;
+    InitializeWFile(&f);
+    CreateWFile(&f,"/cygdrive/d/sparse.tmp",IOM_NO_STREAM,1);
     WriteAtF(&f,0x10000000,"Hallo\n",6);
-    CloseFile(&f,0);
+    CloseWFile(&f,0);
 }
 
 //
@@ -221,15 +222,15 @@ static void test_create_sparse_file()
 
 static void test_splitted_file()
 {
-    File_t of;
-    InitializeFile(&of);
+    WFile_t of;
+    InitializeWFile(&of);
 
-    GenDestFileName(&of,"pool/","split-file",".xxx",false);
-    CreateFile( &of, 0, IOM_NO_STREAM,true);
+    GenDestWFileName(&of,"pool/","split-file",".xxx",false);
+    CreateWFile( &of, 0, IOM_NO_STREAM,true);
 
     printf("*** created -> press ENTER: "); fflush(stdout); getchar();
 
-    SetupSplitFile(&of,OFT_PLAIN,0x80);
+    SetupSplitWFile(&of,OFT_PLAIN,0x80);
 
     static char abc[] = "abcdefghijklmnopqrstuvwxyz\n";
     static char ABC[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n";
@@ -241,14 +242,14 @@ static void test_splitted_file()
     printf("*** written -> press ENTER: "); fflush(stdout); getchar();
 
     TRACELINE;
-    CloseFile(&of,0);
+    CloseWFile(&of,0);
 
     printf("*** closed -> press ENTER: "); fflush(stdout); getchar();
 
-    File_t f;
-    InitializeFile(&f);
-    OpenFileModify(&f,"pool/split-file.xxx",IOM_NO_STREAM);
-    SetupSplitFile(&f,OFT_PLAIN,0x100);
+    WFile_t f;
+    InitializeWFile(&f);
+    OpenWFileModify(&f,"pool/split-file.xxx",IOM_NO_STREAM);
+    SetupSplitWFile(&f,OFT_PLAIN,0x100);
 
     SeekF(&f,0xc0);
 
@@ -259,7 +260,7 @@ static void test_splitted_file()
     ReadAtF(&f,0,buf,sizeof(buf));
     printf("%.*s|\n",(int)sizeof(buf),buf);
 
-    CloseFile(&f,false);
+    CloseWFile(&f,false);
 }
 
 //
@@ -365,7 +366,7 @@ int test_print_size ( int argc, char ** argv )
 		wd_print_size_1024(0,0,i,false) );
 
  #else
- 
+
     u64 size = 1000000000;
     wd_size_mode_t mode;
     for ( mode = 0; mode < WD_SIZE_N_MODES; mode++ )
@@ -420,7 +421,7 @@ static void dump_wbfs ( WBFS_t * w, enumError err, ccp title )
     DASSERT(w);
     DASSERT(title);
 
-    printf("\n----- %s [%s] -----\n",title,GetErrorName(err));
+    printf("\n----- %s [%s] -----\n",title,GetErrorName(err,"?"));
     printf("%p: sf=%p wbfs=%p disc=%p slot=%d\n",
 		w, w->sf, w->wbfs, w->disc, w->disc_slot );
 
@@ -459,7 +460,7 @@ static int test_open_wdisk ( int argc, char ** argv )
 
 	err = CloseWDisc(&wbfs);
 	dump_wbfs(&wbfs,err,"Close Disc");
-	
+
 	err = ResetWBFS(&wbfs);
 	dump_wbfs(&wbfs,err,"Close WBFS");
     }
@@ -484,7 +485,7 @@ int test ( int argc, char ** argv )
     test_print_size(argc,argv);
     //test_wbfs_free_blocks(argc,argv);
     //test_open_wdisk(argc,argv);
-   
+
     return 0;
 }
 
@@ -500,7 +501,7 @@ static void test_filename ( int argc, char ** argv )
 
     for ( i = 1; i < argc; i++ )
     {
-	NormalizeFileName(buf,buf+sizeof(buf),argv[i],true);
+	NormalizeFileName(buf,sizeof(buf),argv[i],true,use_utf8);
 	printf("%s -> %s\n",argv[i],buf);
    }
 }
@@ -711,9 +712,9 @@ void test_sha1()
 
     for ( i = 0; i < N; i++ )
     {
-	RandomFill(h1,sizeof(h1));
+	MyRandomFill(h1,sizeof(h1));
 	memcpy(h2,h1,sizeof(h2));
-	RandomFill(source,sizeof(source));
+	MyRandomFill(source,sizeof(source));
 
 	SHA1(source,sizeof(source),h1);
 	WIT_SHA1(source,sizeof(source),h2);
@@ -746,7 +747,7 @@ static void test_bzip2 ( int argc, char ** argv )
 	printf("* Load %s\n",argv[i]);
 	char *fdata = MALLOC(fsize);
 	{
-	    enumError err = LoadFile(argv[i],0, 0,fdata,fsize, false,0,0);
+	    enumError err = LoadFile(argv[i],0, 0,fdata,fsize, 0,0,0);
 	    if (err)
 		goto abort;
 
@@ -760,7 +761,7 @@ static void test_bzip2 ( int argc, char ** argv )
 	    char fname[PATH_MAX];
 	    PathCatPPE(fname,sizeof(fname),0,argv[i],".enc");
 	    printf("  - Save %u bytes to %s\n",csize,fname);
-	    err = SaveFile(fname,0,true,false,cdata,csize,false);
+	    err = SaveFileOpt(fname,0,true,false,cdata,csize,false);
 	    if (err)
 		goto abort;
 
@@ -773,7 +774,7 @@ static void test_bzip2 ( int argc, char ** argv )
 
 	    PathCatPPE(fname,sizeof(fname),0,argv[i],".dec");
 	    printf("  - Save %u bytes to %s\n",dsize,fname);
-	    err = SaveFile(fname,0,true,false,ddata,dsize,false);
+	    err = SaveFileOpt(fname,0,true,false,ddata,dsize,false);
 	    if (err)
 		goto abort;
 
@@ -947,7 +948,7 @@ wd_disc_info_t * wd_get_disc_info
     //----- prepare data structure
 
     int alloced_part, used_part = pmode < 1 ? 0 : pmode < 2 ? 1 : disc->n_part;
-    
+
     if (dinfo)
     {
 	alloced_part = dinfo->alloced_part;
@@ -1027,7 +1028,43 @@ void wd_print_disc_info_section
 ///////////////			develop()			///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-static enumError develop_sf ( int argc, char ** argv )
+int patch_server
+(
+    struct wd_iterator_t	*it	// iterator struct with all infos
+)
+{
+    if ( !it->part
+	|| it->icm != WD_ICM_FILE
+	|| strcmp(it->path,"DATA/sys/main.dol")
+	&& strcasecmp(it->path,"DATA/files/rel/StaticR.rel") )
+    {
+	return 0;
+    }
+
+    printf("-> [%u] %s\n",it->size,it->path);
+
+    wd_memmap_item_t * item
+	= wd_insert_memmap_alloc( &it->disc->patch, WD_PAT_DATA,
+					it->off4<<2, it->size );
+    StringCopyS(item->info,sizeof(item->info),it->path+5);
+
+    enumError err = wd_read_part(it->part,it->off4,item->data,it->size,false);
+    if (err)
+    {
+	return ERROR0(ERR_ERROR,"abort\n");
+    }
+
+    printf("SAVE main.dol.tmp\n");
+    SaveFileOpt("main.dol.tmp",0,true,false,item->data,it->size,false);
+
+    wd_print_memmap(stdout,0,&it->disc->patch);
+
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+static enumError develop ( int argc, char ** argv )
 {
     SuperFile_t sf;
     InitializeSF(&sf);
@@ -1039,7 +1076,30 @@ static enumError develop_sf ( int argc, char ** argv )
 	    continue;
 	printf("--- %s:%s\n",oft_info[sf.iod.oft].name,argv[i]);
 
+	wd_disc_t *disc = OpenDiscSF(&sf,false,true);
+	if (disc)
+	{
+	    //wd_iterate_files(disc,patch_server,0,0,WD_IPM_PART_NAME);
+	    wd_patch_main_t pm;
+	    wd_patch_main(&pm,disc,true,true);
+	    wd_print_memmap(stdout,0,&disc->patch);
 
+	    printf("main=%p, staticr=%p\n",pm.main,pm.staticr);
+
+	    if (pm.main)
+		memcpy(pm.main->data,"MAIN",5);
+	    if (pm.staticr)
+		memcpy(pm.staticr->data,"STATICR",8);
+	}
+
+	SuperFile_t fo;
+	InitializeSF(&fo);
+	SetupIOD(&fo,OFT_WDF2,OFT_WDF2);
+	fo.src = &sf;
+	fo.f.fname = STRDUP("pool/a.tmp");
+
+	CopyImage(&sf,&fo,OFT_WDF2,true,false,false);
+	ResetSF(&fo,0);
 	CloseSF(&sf,0);
     }
 
@@ -1061,7 +1121,7 @@ static int nintendo_cmp_qsort ( const void * path1, const void * path2 )
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static enumError develop ( int argc, char ** argv )
+static enumError develop_cmp ( int argc, char ** argv )
 {
     argc--;
     argv++;
@@ -1153,7 +1213,7 @@ enum
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static const CommandTab_t CommandTab[] =
+static const KeywordTab_t CommandTab[] =
 {
 	{ CMD_TEST,		"TEST",		"T",		0 },
 
@@ -1186,7 +1246,7 @@ static const CommandTab_t CommandTab[] =
 void help_exit()
 {
     printf("\nCommands:\n\n");
-    const CommandTab_t * cmd;
+    const KeywordTab_t * cmd;
     for ( cmd = CommandTab; cmd->name1; cmd++ )
 	if (cmd->name2)
 	    printf("  %-*s | %s\n",CMD1_FW,cmd->name1,cmd->name2);
@@ -1233,10 +1293,10 @@ int main ( int argc, char ** argv )
 	help_exit();
 
     int cmd_stat;
-    const CommandTab_t * cmd_ct = ScanCommand(&cmd_stat,argv[1],CommandTab);
+    const KeywordTab_t * cmd_ct = ScanKeyword(&cmd_stat,argv[1],CommandTab);
     if (!cmd_ct)
     {
-	PrintCommandError(CommandTab,argv[1],cmd_stat,0);
+	PrintKeywordError(CommandTab,argv[1],cmd_stat,0,0);
 	help_exit();
     }
 

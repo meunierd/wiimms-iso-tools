@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -58,7 +58,11 @@
 // Only the first WII_KEY_SIZE bytes of 'common_key' are used.
 
 static u8 common_key_templ[WII_KEY_SIZE] = "common key unset";
+#ifdef SUPPORT_CKEY_DEVELOP
+static u8 common_key[WD_CKEY__N][WII_KEY_SIZE] = {"","",""};
+#else
 static u8 common_key[WD_CKEY__N][WII_KEY_SIZE] = {"",""};
+#endif
 
 static const u8 iv0[WII_KEY_SIZE] = {0}; // always NULL
 
@@ -106,8 +110,10 @@ const u8 * wd_set_common_key
     if (new_key)
     {
 	memcpy(ckey,new_key,WII_KEY_SIZE);
-	TRACE("new common key[%d]:\n",ckey_index);
-	TRACE_HEXDUMP16(8,0,ckey,WII_KEY_SIZE);
+ #ifdef TEST
+	PRINT("new common key[%d]:\n",ckey_index);
+	HEXDUMP16(8,0,ckey,WII_KEY_SIZE);
+ #endif
     }
     return ckey;
 }
@@ -541,6 +547,8 @@ char * wd_print_id
 					// If NULL, a local circulary static buffer is used
 )
 {
+    DASSERT(id);
+
     if (!buf)
 	buf = GetCircBuf( id_len + 1);
 
@@ -554,6 +562,40 @@ char * wd_print_id
     *dest = 0;
 
     return buf;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// returns a pointer to a printable ID with colors, teminated with 0
+
+char * wd_print_id_col
+(
+    const void		* id,		// NULL | EMPTY | ID to convert
+    size_t		id_len,		// len of 'id'
+    const void		* ref_id,	// reference ID
+    const ColorSet_t	*colset		// NULL or color set
+)
+{
+    if ( !id || !*(u8*)id )
+	return "  --";
+
+    if ( !ref_id || !memcmp(id,ref_id,id_len) || !colset || !colset->colorize )
+	return wd_print_id(id,id_len,0);
+
+    char buf[100];
+    char *dest = StringCopyS(buf,sizeof(buf)-id_len,colset->highlight);
+
+    ccp src = id;
+    while ( id_len-- > 0 )
+    {
+	const char ch = *src++;
+	*dest++ = ch >= ' ' && ch < 0x7f ? ch : '.';
+    }
+    dest = StringCopyE(dest,buf+sizeof(buf),colset->reset);
+
+    const uint len = dest - buf + 1;
+    char *res = GetCircBuf(len);
+    memcpy(res,buf,len);
+    return res;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -612,7 +654,7 @@ enumError wd_read_raw
     u32			disc_offset4,	// disc offset/4
     void		* dest_buf,	// destination buffer
     u32			read_size,	// number of bytes to read 
-    wd_usage_t		usage_id	// not 0: mark usage usage_tab with this value
+    wd_usage_t		usage_id	// not 0: mark usage usage_table with this value
 )
 {
     DASSERT(disc);
@@ -805,7 +847,7 @@ enumError wd_read_part
 (
     wd_part_t		* part,		// valid pointer to a disc partition
     u32			data_offset4,	// partition data offset/4
-    void		* dest_buf,	// estination buffer
+    void		* dest_buf,	// destination buffer
     u32			read_size,	// number of bytes to read 
     bool		mark_block	// true: mark block in 'usage_table'
 )
@@ -1798,6 +1840,35 @@ bool wd_part_has_h3
     return !part->is_gc && part->ph.h3_off4;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+uint wd_disc_is_encrypted
+(
+    // return
+    //    0: no partition is encrypted
+    //    N: some (=N) partitions are encrypted, but not all
+    // 1000: all partitions are encrypted
+
+    wd_disc_t		* disc		// disc to check, valid
+)
+{
+    DASSERT(disc);
+
+    int pi, n_encrypted = 0, n_total = 0;
+    for ( pi = 0; pi < disc->n_part; pi++ )
+    {
+	wd_part_t *part = disc->part + pi;
+	const enumError err = wd_load_part(part,false,false,true);
+	if (err)
+	    continue;
+	n_total++;
+	if ( part->is_encrypted)
+	    n_encrypted++;
+    }
+
+    return !n_encrypted ? 0 : n_encrypted == n_total ? 1000 : n_encrypted;
+}
+
 //
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			get partition data		///////////////
@@ -2234,7 +2305,7 @@ enumError wd_load_part
 	//----- calculate size of apploader.img
 
 	{
-	    u8 * apl_header = (u8*) disc->temp_buf;
+	    u8 *apl_header = (u8*)disc->temp_buf;
 	    const u32 apl_off4 = part->is_gc ? WII_APL_OFF : WII_APL_OFF >> 2;
 	    err = wd_read_part(part,apl_off4,apl_header,0x20,false);
 	    if (err)
@@ -2251,6 +2322,27 @@ enumError wd_load_part
 
 	    wd_mark_part(part,WII_APL_OFF>>2,part->apl_size);
 	}
+
+
+	//----- calculate offset and size of user.bin
+
+ #if SUPPORT_USER_BIN > 0
+	{
+	    const u32 off = ALIGN32( WII_APL_OFF + part->apl_size, WIIUSER_DATA_ALIGN );
+	    noPRINT(">>> user.bin offset: %x\n",off);
+
+	    wiiuser_header_t *wuh = (wiiuser_header_t*)disc->temp_buf;
+	    err = wd_read_part(part,off>>2,wuh,sizeof(*wuh),false);
+	    if ( !err && !memcmp(wuh->magic,WIIUSER_MAGIC,sizeof(wuh->magic)) )
+	    {
+		noPRINT(">>> user.bin FOUND! vers=%u, size=%x\n",
+			ntohl(wuh->version), ntohl(wuh->size) );
+		part->ubin_off4 = ( off + sizeof(wiiuser_header_t) ) >> 2;
+		part->ubin_size = ntohl(wuh->size);
+		wd_mark_part(part,part->ubin_off4,part->ubin_size);
+	    }
+	}
+ #endif
 
 
 	//----- load and iterate fst
@@ -3560,9 +3652,32 @@ static int wd_iterate_fst_helper
 		    return stat;
 	    }
 
+	 #if SUPPORT_USER_BIN > 0
+	    if ( sys_files->ubin_off4 && sys_files->ubin_size )
+	    {
+		DASSERT( it->icm == WD_ICM_FILE );
+		DASSERT(!it->data);
+
+		it->off4 = sys_files->ubin_off4;
+		it->size = sys_files->ubin_size;
+		strcpy(it->fst_name,"sys/user.bin");
+		stat = func(it);
+		if ( stat == 1 && exec_func )
+		{
+		    mod = 1;
+		    exec_func(it);
+		}
+		else if (stat)
+		    return stat;
+	    }
+	 #endif
+
+// [[2do]] [[fst+]]
 	    DASSERT( it->icm == WD_ICM_FILE );
 	    it->off4 = sys_files->boot.fst_off4;
-	    it->size = sys_files->boot.fst_size4 << 2;
+	    it->size = sys_files->boot.fst_size4;
+	    if (!is_gc)
+		it->size <<= 2;
 	    DASSERT(!it->data);
 	    strcpy(it->fst_name,"sys/fst.bin");
 	    stat = func(it);
@@ -4316,14 +4431,18 @@ int wd_select_part_files
 	if ( utab[sector] == usage_id )
 	    utab[sector] = WD_USAGE_UNUSED; 
 
+
     //----- mark needed system files
 
     wd_mark_part( part, WII_BOOT_OFF>>2, WII_BOOT_SIZE );	// boot.bin
     wd_mark_part( part, WII_BI2_OFF>>2, WII_BI2_SIZE );		// bi2.bin
     wd_mark_part( part, WII_APL_OFF>>2, part->apl_size );	// apploader.img
     wd_mark_part( part, part->boot.dol_off4, part->dol_size );	// main.dol
-    wd_mark_part( part, part->boot.fst_off4,
-			part->boot.fst_size4 << 2 );		// fst.bin
+
+    u32 fst_size = part->boot.fst_size4;
+    if (!part->is_gc)
+	fst_size <<= 2;
+    wd_mark_part( part, part->boot.fst_off4, fst_size );	// fst.bin
 
 
     //----- call iterator for files/...
@@ -4780,7 +4899,7 @@ int wd_insert_memmap_disc_part
     wd_disc_t		* disc,		// valid disc pointer
 
     wd_memmap_func_t	func,		// not NULL: Call func() for each inserted item
-    void		* param,	// user defined paramater for 'func()'
+    void		* param,	// user defined parameter for 'func()'
 
     // creation modes:
     // value WD_PAT_IGNORE means: do not create such entires
@@ -4818,7 +4937,7 @@ int wd_insert_memmap_part
     wd_part_t		* part,		// valid pointer to a disc partition
 
     wd_memmap_func_t	func,		// not NULL: Call func() for each inserted item
-    void		* param,	// user defined paramater for 'func()'
+    void		* param,	// user defined parameter for 'func()'
 
     // creation modes:
     // value WD_PAT_IGNORE means: do not create such entires
@@ -5216,6 +5335,7 @@ static enumError wd_rap_part_sectors
 	return ERR_OK;
     disc->group_cache_sector = sector;
     u8 * buf = disc->group_cache;
+
 
     //----- reloc check
 
@@ -6039,6 +6159,78 @@ bool wd_patch_part_system // result = true if something changed
     return stat;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+static int wd_patch_main_iterator
+(
+    struct wd_iterator_t	*it	// iterator struct with all infos
+)
+{
+    if ( !it->part || it->icm != WD_ICM_FILE )
+	return 0;
+
+    wd_patch_main_t *pm = it->param;
+    DASSERT(pm);
+
+    wd_memmap_item_t ** item_ptr;
+    if ( pm->patch_main && !pm->main
+	&& !strcmp(it->path,"DATA/sys/main.dol") )
+    {
+	PRINT("-> PATCH MAIN [%u] %s\n",it->size,it->path);
+	item_ptr = &pm->main;
+    }
+    else if ( pm->patch_staticr && !pm->staticr
+	&& !strcasecmp(it->path,"DATA/files/rel/StaticR.rel") )
+    {
+	PRINT("-> PATCH STATIC [%u] %s\n",it->size,it->path);
+	item_ptr = &pm->staticr;
+    }
+    else
+	return 0;
+
+    wd_memmap_item_t * item
+	= wd_insert_memmap_alloc( &it->part->patch, WD_PAT_DATA,
+					it->off4<<2, it->size );
+    item->index = it->part->index;
+    StringCopyS(item->info,sizeof(item->info),it->path+5);
+
+    enumError err = wd_read_part(it->part,it->off4,item->data,it->size,false);
+    if (err)
+    {
+	return ERROR0(ERR_ERROR,"abort\n");
+    }
+
+    *item_ptr = item;
+    pm->part = it->part;
+    it->part->sign_tmd = true;
+
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// [[domain]]
+
+int wd_patch_main
+(
+    wd_patch_main_t	*pm,		// result only, will be initialized
+    wd_disc_t		*disc,		// valid disc
+    bool		patch_main,	// true: patch 'sys/main.dol'
+    bool		patch_staticr	// true: patch 'files/rel/staticr.rel'
+)
+{
+    DASSERT(pm);
+    DASSERT(disc);
+
+    memset(pm,0,sizeof(*pm));
+    pm->disc		= disc;
+    pm->patch_main	= patch_main;
+    pm->patch_staticr	= patch_staticr;
+
+    return wd_iterate_files( disc, wd_patch_main_iterator, pm,
+			patch_staticr ? 0 : 1, WD_IPM_PART_NAME );
+}
+
 //
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			    relocation			///////////////
@@ -6082,6 +6274,9 @@ static void wd_mark_part_reloc
     wd_reloc_t		flags		// flags to set
 )
 {
+    WDPRINT("##### wd_mark_part_reloc() P=%u, off=%llx, size=%llx, fl=%x\n",
+		part->index, off, size, flags );
+
     u64 end = off + size;
     u32 idx = off / WII_SECTOR_DATA_SIZE + part->data_off4 / WII_SECTOR_SIZE4;
 
@@ -6089,8 +6284,11 @@ static void wd_mark_part_reloc
     {
 	DASSERT( idx < WII_MAX_SECTORS );
 	reloc[idx] |= flags;
-	off = ++idx * (u64)WII_SECTOR_DATA_SIZE;
+	noPRINT("reloc[%x] = %x [off=%llx/%llx]\n",idx,reloc[idx],off,end);
+	//off = ++idx * (u64)WII_SECTOR_DATA_SIZE;
+	off = ( off / WII_SECTOR_DATA_SIZE + 1 ) * WII_SECTOR_DATA_SIZE;
     }
+    noPRINT("[off=%llx/%llx]\n",off,end);
 
     while ( off < end )
     {
@@ -6099,6 +6297,7 @@ static void wd_mark_part_reloc
 	if ( off <= end && flags & WD_RELOC_F_PATCH )
 	    reloc[idx] &= ~WD_RELOC_F_COPY;
 	reloc[idx++] |= flags;
+	noPRINT("reloc[%x] = %x [off=%llx/%llx]\n",idx-1,reloc[idx-1],off,end);
     }
 }
 

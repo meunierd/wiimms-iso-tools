@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -40,10 +40,10 @@
  ***************************************************************************/
 
 
-#ifndef WIT_UI_WWT_H
-#define WIT_UI_WWT_H
-#include "lib-std.h"
-#include "ui.h"
+#ifndef SZS_UI_WWT_H
+#define SZS_UI_WWT_H
+#include "dclib-basics.h"
+#include "dclib-ui.h"
 
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,6 +77,7 @@ typedef enum enumOptions
 	OPT_IGNORE_FST,
 	OPT_IGNORE_SETUP,
 	OPT_LINKS,
+	OPT_USER_BIN,
 	OPT_PMODE,
 	OPT_FLAT,
 	OPT_COPY_GC,
@@ -95,6 +96,10 @@ typedef enum enumOptions
 	OPT_REGION,
 	OPT_COMMON_KEY,
 	OPT_IOS,
+	OPT_HTTP,
+	OPT_DOMAIN,
+	OPT_WIIMMFI,
+	OPT_TWIIMMFI,
 	OPT_RM_FILES,
 	OPT_ZERO_FILES,
 	OPT_REPL_FILE,
@@ -106,12 +111,13 @@ typedef enum enumOptions
 	OPT_ALIGN_FILES,
 	OPT_DEST,
 	OPT_DEST2,
+	OPT_AUTO_SPLIT,
+	OPT_NO_SPLIT,
 	OPT_SPLIT,
 	OPT_SPLIT_SIZE,
 	OPT_DISC_SIZE,
 	OPT_PREALLOC,
 	OPT_TRUNC,
-	OPT_FAST,
 	OPT_CHUNK_MODE,
 	OPT_CHUNK_SIZE,
 	OPT_MAX_CHUNKS,
@@ -131,7 +137,11 @@ typedef enum enumOptions
 	OPT_OVERWRITE,
 	OPT_REMOVE,
 	OPT_WDF,
+	OPT_WDF1,
+	OPT_WDF2,
 	OPT_WIA,
+	OPT_GCZ,
+	OPT_GCZ_ZIP,
 	OPT_ISO,
 	OPT_CISO,
 	OPT_WBFS,
@@ -157,7 +167,7 @@ typedef enum enumOptions
 	OPT_SORT,
 	OPT_LIMIT,
 
-	OPT__N_SPECIFIC, // == 101 
+	OPT__N_SPECIFIC, // == 111 
 
 	//----- global options -----
 
@@ -171,8 +181,11 @@ typedef enum enumOptions
 	OPT_SCAN_PROGRESS,
 	OPT_LOGGING,
 	OPT_ESC,
+	OPT_COLOR,
+	OPT_COLOR_256,
+	OPT_NO_COLOR,
 	OPT_IO,
-	OPT_DIRECT,
+	OPT_DSYNC,
 	OPT_TITLES,
 	OPT_UTF_8,
 	OPT_NO_UTF_8,
@@ -182,8 +195,10 @@ typedef enum enumOptions
 	OPT_NEW,
 	OPT_HOOK,
 	OPT_FORCE,
+	OPT_ALIGN_WDF,
+	OPT_GCZ_BLOCK,
 
-	OPT__N_TOTAL // == 122
+	OPT__N_TOTAL // == 137
 
 } enumOptions;
 
@@ -219,6 +234,7 @@ typedef enum enumOptions
 //	OB_IGNORE_FST		= 1llu << OPT_IGNORE_FST,
 //	OB_IGNORE_SETUP		= 1llu << OPT_IGNORE_SETUP,
 //	OB_LINKS		= 1llu << OPT_LINKS,
+//	OB_USER_BIN		= 1llu << OPT_USER_BIN,
 //	OB_PMODE		= 1llu << OPT_PMODE,
 //	OB_FLAT			= 1llu << OPT_FLAT,
 //	OB_COPY_GC		= 1llu << OPT_COPY_GC,
@@ -237,6 +253,10 @@ typedef enum enumOptions
 //	OB_REGION		= 1llu << OPT_REGION,
 //	OB_COMMON_KEY		= 1llu << OPT_COMMON_KEY,
 //	OB_IOS			= 1llu << OPT_IOS,
+//	OB_HTTP			= 1llu << OPT_HTTP,
+//	OB_DOMAIN		= 1llu << OPT_DOMAIN,
+//	OB_WIIMMFI		= 1llu << OPT_WIIMMFI,
+//	OB_TWIIMMFI		= 1llu << OPT_TWIIMMFI,
 //	OB_RM_FILES		= 1llu << OPT_RM_FILES,
 //	OB_ZERO_FILES		= 1llu << OPT_ZERO_FILES,
 //	OB_REPL_FILE		= 1llu << OPT_REPL_FILE,
@@ -248,12 +268,13 @@ typedef enum enumOptions
 //	OB_ALIGN_FILES		= 1llu << OPT_ALIGN_FILES,
 //	OB_DEST			= 1llu << OPT_DEST,
 //	OB_DEST2		= 1llu << OPT_DEST2,
+//	OB_AUTO_SPLIT		= 1llu << OPT_AUTO_SPLIT,
+//	OB_NO_SPLIT		= 1llu << OPT_NO_SPLIT,
 //	OB_SPLIT		= 1llu << OPT_SPLIT,
 //	OB_SPLIT_SIZE		= 1llu << OPT_SPLIT_SIZE,
 //	OB_DISC_SIZE		= 1llu << OPT_DISC_SIZE,
 //	OB_PREALLOC		= 1llu << OPT_PREALLOC,
 //	OB_TRUNC		= 1llu << OPT_TRUNC,
-//	OB_FAST			= 1llu << OPT_FAST,
 //	OB_CHUNK_MODE		= 1llu << OPT_CHUNK_MODE,
 //	OB_CHUNK_SIZE		= 1llu << OPT_CHUNK_SIZE,
 //	OB_MAX_CHUNKS		= 1llu << OPT_MAX_CHUNKS,
@@ -273,7 +294,11 @@ typedef enum enumOptions
 //	OB_OVERWRITE		= 1llu << OPT_OVERWRITE,
 //	OB_REMOVE		= 1llu << OPT_REMOVE,
 //	OB_WDF			= 1llu << OPT_WDF,
+//	OB_WDF1			= 1llu << OPT_WDF1,
+//	OB_WDF2			= 1llu << OPT_WDF2,
 //	OB_WIA			= 1llu << OPT_WIA,
+//	OB_GCZ			= 1llu << OPT_GCZ,
+//	OB_GCZ_ZIP		= 1llu << OPT_GCZ_ZIP,
 //	OB_ISO			= 1llu << OPT_ISO,
 //	OB_CISO			= 1llu << OPT_CISO,
 //	OB_WBFS			= 1llu << OPT_WBFS,
@@ -314,7 +339,8 @@ typedef enum enumOptions
 //
 //	OB_GRP_FST_OPTIONS	= OB_IGNORE_FST
 //				| OB_IGNORE_SETUP
-//				| OB_LINKS,
+//				| OB_LINKS
+//				| OB_USER_BIN,
 //
 //	OB_GRP_EXCLUDE		= OB_EXCLUDE
 //				| OB_EXCLUDE_PATH
@@ -345,12 +371,16 @@ typedef enum enumOptions
 //				| OB_TIME,
 //
 //	OB_GRP_OUTMODE_EDIT	= OB_WDF
+//				| OB_WDF1
+//				| OB_WDF2
 //				| OB_ISO
 //				| OB_CISO
 //				| OB_WBFS,
 //
 //	OB_GRP_OUTMODE		= OB_GRP_OUTMODE_EDIT
 //				| OB_WIA
+//				| OB_GCZ
+//				| OB_GCZ_ZIP
 //				| OB_FST,
 //
 //	OB_GRP_PARTITIONS	= OB_PSEL
@@ -376,6 +406,10 @@ typedef enum enumOptions
 //				| OB_REGION
 //				| OB_COMMON_KEY
 //				| OB_IOS
+//				| OB_HTTP
+//				| OB_DOMAIN
+//				| OB_WIIMMFI
+//				| OB_TWIIMMFI
 //				| OB_RM_FILES
 //				| OB_ZERO_FILES,
 //
@@ -387,7 +421,9 @@ typedef enum enumOptions
 //				| OB_ALIGN_PART
 //				| OB_ALIGN_FILES,
 //
-//	OB_GRP_SPLIT_CHUNK	= OB_SPLIT
+//	OB_GRP_SPLIT_CHUNK	= OB_AUTO_SPLIT
+//				| OB_NO_SPLIT
+//				| OB_SPLIT
 //				| OB_SPLIT_SIZE
 //				| OB_DISC_SIZE
 //				| OB_PREALLOC
@@ -403,7 +439,8 @@ typedef enum enumOptions
 //
 //	OB_CMD_HELP		= ~(u64)0,
 //
-//	OB_CMD_INFO		= OB_SECTIONS,
+//	OB_CMD_INFO		= OB_SECTIONS
+//				| OB_LONG,
 //
 //	OB_CMD_TEST		= ~(u64)0,
 //
@@ -415,6 +452,8 @@ typedef enum enumOptions
 //				| OB_NO_HEADER
 //				| OB_LONG
 //				| OB_NUMERIC,
+//
+//	OB_CMD_FEATURES		= 0,
 //
 //	OB_CMD_EXCLUDE		= OB_EXCLUDE
 //				| OB_EXCLUDE_PATH,
@@ -485,6 +524,7 @@ typedef enum enumOptions
 //
 //	OB_GRP_CHECK		= OB_GRP_TITLES
 //				| OB_GRP_READ_WBFS
+//				| OB_SECTIONS
 //				| OB_LONG,
 //
 //	OB_CMD_CHECK		= OB_GRP_CHECK
@@ -549,13 +589,13 @@ typedef enum enumOptions
 //				| OB_GRP_OUTMODE
 //				| OB_GRP_FST_SELECT
 //				| OB_LINKS
+//				| OB_USER_BIN
 //				| OB_UNIQUE
 //				| OB_IGNORE
 //				| OB_REMOVE
 //				| OB_UPDATE
 //				| OB_OVERWRITE
-//				| OB_TRUNC
-//				| OB_FAST,
+//				| OB_TRUNC,
 //
 //	OB_CMD_SCRUB		= OB_GRP_TITLES
 //				| OB_GRP_MOD_WBFS
@@ -640,6 +680,7 @@ typedef enum enumCommands
 	CMD_TEST,
 	CMD_ERROR,
 	CMD_COMPR,
+	CMD_FEATURES,
 	CMD_EXCLUDE,
 	CMD_TITLES,
 	CMD_GETTITLES,
@@ -683,7 +724,7 @@ typedef enum enumCommands
 
 	CMD_FILETYPE,
 
-	CMD__N // == 44
+	CMD__N // == 45
 
 } enumCommands;
 
@@ -743,8 +784,11 @@ typedef enum enumGetOpt
 	GO_XHELP		= 0x80,
 	GO_WIDTH,
 	GO_SCAN_PROGRESS,
+	GO_COLOR,
+	GO_COLOR_256,
+	GO_NO_COLOR,
 	GO_IO,
-	GO_DIRECT,
+	GO_DSYNC,
 	GO_UTF_8,
 	GO_NO_UTF_8,
 	GO_LANG,
@@ -761,6 +805,7 @@ typedef enum enumGetOpt
 	GO_IGNORE_FST,
 	GO_IGNORE_SETUP,
 	GO_LINKS,
+	GO_USER_BIN,
 	GO_PMODE,
 	GO_FLAT,
 	GO_COPY_GC,
@@ -780,6 +825,10 @@ typedef enum enumGetOpt
 	GO_REGION,
 	GO_COMMON_KEY,
 	GO_IOS,
+	GO_HTTP,
+	GO_DOMAIN,
+	GO_WIIMMFI,
+	GO_TWIIMMFI,
 	GO_RM_FILES,
 	GO_ZERO_FILES,
 	GO_REPL_FILE,
@@ -789,10 +838,11 @@ typedef enum enumGetOpt
 	GO_ALIGN,
 	GO_ALIGN_PART,
 	GO_ALIGN_FILES,
+	GO_AUTO_SPLIT,
+	GO_NO_SPLIT,
 	GO_DISC_SIZE,
 	GO_PREALLOC,
 	GO_TRUNC,
-	GO_FAST,
 	GO_CHUNK_MODE,
 	GO_CHUNK_SIZE,
 	GO_MAX_CHUNKS,
@@ -805,7 +855,13 @@ typedef enum enumGetOpt
 	GO_REPAIR,
 	GO_NO_FREE,
 	GO_SYNC_ALL,
+	GO_WDF1,
+	GO_WDF2,
+	GO_ALIGN_WDF,
 	GO_WIA,
+	GO_GCZ,
+	GO_GCZ_ZIP,
+	GO_GCZ_BLOCK,
 	GO_FST,
 	GO_FILES,
 	GO_ITIME,
@@ -829,19 +885,20 @@ typedef enum enumGetOpt
 ///////////////                  external vars                  ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-extern const InfoOption_t OptionInfo[OPT__N_TOTAL+1];
-extern const CommandTab_t CommandTab[];
-extern const char OptionShort[];
-extern const struct option OptionLong[];
-extern u8 OptionUsed[OPT__N_TOTAL+1];
-extern const u8 OptionIndex[OPT_INDEX_SIZE];
-extern const InfoCommand_t CommandInfo[CMD__N+1];
-extern const InfoUI_t InfoUI;
+//extern const InfoOption_t OptionInfo[OPT__N_TOTAL+1];
+//extern const KeywordTab_t CommandTab[];
+//extern const char OptionShort[];
+//extern const struct option OptionLong[];
+//extern u8 OptionUsed[OPT__N_TOTAL+1];
+//extern const OptionIndex_t OptionIndex[UIOPT_INDEX_SIZE];
+//UIOPT_INDEX_SIZE := 0x100 = 256
+//extern const InfoCommand_t CommandInfo[CMD__N+1];
+extern const InfoUI_t InfoUI_wwt;
 
 //
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////                       END                       ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#endif // WIT_UI_WWT_H
+#endif // SZS_UI_WWT_H
 

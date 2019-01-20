@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -92,6 +92,7 @@ int validate_file_format_sizes ( int trace_sizes )
 	TRACE_SIZEOF(wpat_toc_header_t);
 	TRACE_SIZEOF(wpat_type_t);
 
+	TRACE_SIZEOF(wiiuser_header_t);
 
      #ifdef DEBUG
 	wd_part_control_t pc, pc_saved;
@@ -149,6 +150,11 @@ int validate_file_format_sizes ( int trace_sizes )
     CHECK( sizeof(wd_tmd_content_t)	== 0x24 );
     CHECK( sizeof(wd_tmd_t) + sizeof(wd_tmd_content_t) == WII_TMD_GOOD_SIZE );
 
+    CHECK( sizeof(wiiuser_header_t)	== WIIUSER_HEAD_SIZE );
+
+    // >>> copy to below
+
+
     //----- 3. calculate return value
 
     #undef  CHECK
@@ -187,6 +193,8 @@ int validate_file_format_sizes ( int trace_sizes )
     CHECK( sizeof(wd_tmd_t)		== 0x1e4 );
     CHECK( sizeof(wd_tmd_content_t)	== 0x24 );
     CHECK( sizeof(wd_tmd_t) + sizeof(wd_tmd_content_t) == WII_TMD_GOOD_SIZE );
+
+    CHECK( sizeof(wiiuser_header_t)	== WIIUSER_HEAD_SIZE );
 
     return 0;
 }
@@ -578,7 +586,7 @@ void header_128_setup
     id_setup(&dhead->disc_id,id6,6);
 
     if (!disc_title)
-	disc_title = "WIT: Wiimms ISO Tools, http://wit.wiimm.de/";
+	disc_title = "WIT: Wiimms ISO Tools, https://wit.wiimm.de/";
     strncpy(dhead->disc_title,disc_title,sizeof(dhead->disc_title)-1);
 
     if (is_gc)

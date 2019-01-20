@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -113,7 +113,7 @@ u32 CalcMemoryUsageBZIP2
 enumError EncBZIP2_Open
 (
     BZIP2_t		* bz,		// data structure, will be initialized
-    File_t		* file,		// destination file
+    WFile_t		* file,		// destination file
     int			compr_level	// valid are 1..9 / 0: use default value
 )
 {
@@ -210,7 +210,7 @@ enumError EncBZIP2_Close
 enumError DecBZIP2_Open
 (
     BZIP2_t		* bz,		// data structure, will be initialized
-    File_t		* file		// source file
+    WFile_t		* file		// source file
 )
 {
     DASSERT(file);

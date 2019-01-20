@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -57,6 +57,14 @@
 
 //
 ///////////////////////////////////////////////////////////////////////////////
+///////////////			conditionals			///////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// search and load 'sys/user.bin'  =>  0=off, 1=readonly, 2=read+create
+#define SUPPORT_USER_BIN	2
+
+//
+///////////////////////////////////////////////////////////////////////////////
 ///////////////			enum wd_part_type_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -73,10 +81,19 @@ typedef enum wd_part_type_t // known partition types
 ///////////////			enum wd_ckey_index_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef TEST
+  #define SUPPORT_CKEY_DEVELOP 1
+#else
+  #define SUPPORT_CKEY_DEVELOP 0
+#endif
+
 typedef enum wd_ckey_index_t // known partition types
 {
     WD_CKEY_STANDARD,		// standard common key
     WD_CKEY_KOREA,		// common key for korea
+ #ifdef SUPPORT_CKEY_DEVELOP
+    WD_CKEY_DEVELOPER,		// common key type 'developer'
+ #endif
     WD_CKEY__N			// number of common keys
 
 } wd_ckey_index_t;
@@ -224,9 +241,9 @@ typedef enum wd_sector_status_t
 {
     //----- cleared status
 
-    WD_SS_HASH_CLEARED		= 0x0001,   // hash area cleard with any constant
-    WD_SS_DATA_CLEARED		= 0x0002,   // data area cleard with any constant
-    WD_SS_SECTOR_CLEARED	= 0x0004,   // complete sector cleard with any constant
+    WD_SS_HASH_CLEARED		= 0x0001,   // hash area cleared with any constant
+    WD_SS_DATA_CLEARED		= 0x0002,   // data area cleared with any constant
+    WD_SS_SECTOR_CLEARED	= 0x0004,   // complete sector cleared with any constant
 					    // if set: WD_SS_HASH_CLEARED
 					    //	     & WD_SS_DATA_CLEARED are set too
 
@@ -289,7 +306,7 @@ typedef enum wd_scrubbed_t // scrubbing mode
 typedef enum wd_usage_t // usage table values
 {
     WD_USAGE_UNUSED,		// block is not used, always = 0
-    WD_USAGE_DISC,		// block is used for disc managment
+    WD_USAGE_DISC,		// block is used for disc management
     WD_USAGE_PART_0,		// index for first partition
 
     WD_USAGE__MASK	= 0x7f,	// mask for codes above
@@ -455,6 +472,7 @@ typedef void (*wd_memmap_func_t)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////		    struct wd_select_item_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_select_item_t]]
 
 typedef struct wd_select_item_t // a select sub item
 {
@@ -468,6 +486,7 @@ typedef struct wd_select_item_t // a select sub item
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_select_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_select_t]]
 
 typedef struct wd_select_t // a selector
 {
@@ -484,6 +503,7 @@ typedef struct wd_select_t // a selector
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_memmap_item_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_memmap_item_t]]
 
 typedef struct wd_memmap_item_t // patching data item
 {
@@ -501,6 +521,7 @@ typedef struct wd_memmap_item_t // patching data item
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_memmap_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_memmap_t]]
 
 typedef struct wd_memmap_t // patching data structure
 {
@@ -514,6 +535,7 @@ typedef struct wd_memmap_t // patching data structure
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_file_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_file_t]]
 
 typedef struct wd_file_t
 {
@@ -535,6 +557,7 @@ typedef struct wd_file_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_file_list_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_file_list_t]]
 
 typedef struct wd_file_list_t
 {
@@ -549,6 +572,7 @@ typedef struct wd_file_list_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_part_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_part_t]]
 
 typedef struct wd_part_t
 {
@@ -567,6 +591,7 @@ typedef struct wd_part_t
     struct wd_disc_t	* disc;		// pointer to disc
     wd_memmap_t		patch;		// patching data
 
+
     //----- partition status
 
     bool		is_loaded;	// true if this partition info was loaded
@@ -579,6 +604,7 @@ typedef struct wd_part_t
 
     wd_sector_status_t	sector_stat;	// sector status: OR'ed for different sectors
     bool		scrub_test_done;// true if scrubbing test already done
+
 
     //----- to do status
 
@@ -618,6 +644,11 @@ typedef struct wd_part_t
     u32			apl_size;	// size of apploader.img
     u32			region;		// gamecube region code, extract of bi2
 
+ #if SUPPORT_USER_BIN > 0
+    u32			ubin_off4;	// NULL or offset/4 of user.bin
+    u32			ubin_size;	// NULL or sife of user.bin
+ #endif
+
     wd_fst_item_t	* fst;		// pointer to fst data
     u32			fst_n;		// number or elements in fst
     u32			fst_max_off4;	// informative: maximal offset4 value of all files
@@ -631,6 +662,7 @@ typedef struct wd_part_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_disc_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_disc_t]]
 
 typedef struct wd_disc_t
 {
@@ -738,6 +770,7 @@ typedef struct wd_disc_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_iterator_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_iterator_t]]
 
 typedef struct wd_iterator_t
 {
@@ -776,6 +809,7 @@ typedef struct wd_iterator_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_print_fst_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_print_fst_t]]
 
 typedef struct wd_print_fst_t
 {
@@ -927,6 +961,17 @@ char * wd_print_id
 );
 
 //-----------------------------------------------------------------------------
+// returns a pointer to a printable ID with colors, teminated with 0
+
+char * wd_print_id_col
+(
+    const void		* id,		// NULL | EMPTY | ID to convert
+    size_t		id_len,		// len of 'id'
+    const void		* ref_id,	// reference ID
+    const ColorSet_t	*colset		// NULL or color set
+);
+
+//-----------------------------------------------------------------------------
 // rename ID and title of a ISO header
 
 int wd_rename
@@ -947,7 +992,7 @@ enumError wd_read_raw
     u32			disc_offset4,	// disc offset/4
     void		* dest_buf,	// destination buffer
     u32			read_size,	// number of bytes to read 
-    wd_usage_t		usage_id	// not 0: mark usage usage_tab with this value
+    wd_usage_t		usage_id	// not 0: mark usage usage_table with this value
 );
 
 //-----------------------------------------------------------------------------
@@ -977,7 +1022,7 @@ enumError wd_read_part
 (
     wd_part_t		* part,		// valid pointer to a disc partition
     u32			data_offset4,	// partition data offset/4
-    void		* dest_buf,	// estination buffer
+    void		* dest_buf,	// destination buffer
     u32			read_size,	// number of bytes to read 
     bool		mark_block	// true: mark block in 'usage_table'
 );
@@ -1141,6 +1186,18 @@ bool wd_part_has_cert
 bool wd_part_has_h3
 (
     wd_part_t		*part		// valid disc partition pointer
+);
+
+//-----------------------------------------------------------------------------
+
+uint wd_disc_is_encrypted
+(
+    // return
+    //    0: no partition is encrypted
+    //    N: some (=N) partitions are encrypted, but not all
+    // 1000: all partitions are encrypted
+    
+    wd_disc_t		* disc		// disc to check, valid
 );
 
 //
@@ -1706,7 +1763,7 @@ int wd_insert_memmap_disc_part
     wd_disc_t		* disc,		// valid disc pointer
 
     wd_memmap_func_t	func,		// not NULL: Call func() for each inserted item
-    void		* param,	// user defined paramater for 'func()'
+    void		* param,	// user defined parameter for 'func()'
 
     // creation modes:
     // value WD_PAT_IGNORE means: do not create such entires
@@ -1726,7 +1783,7 @@ int wd_insert_memmap_part
     wd_part_t		* part,		// valid pointer to a disc partition
 
     wd_memmap_func_t	func,		// not NULL: Call func() for each inserted item
-    void		* param,	// user defined paramater for 'func()'
+    void		* param,	// user defined parameter for 'func()'
 
     // creation modes:
     // value WD_PAT_IGNORE means: do not create such entires
@@ -1889,6 +1946,30 @@ bool wd_patch_part_system // result = true if something changed
 (
     wd_part_t		* part,		// valid pointer to a disc partition
     u64			system		// new system id (IOS)
+);
+
+///////////////////////////////////////////////////////////////////////////////
+// [[wd_patch_main_t]]
+
+typedef struct wd_patch_main_t
+{
+    wd_disc_t	*disc;		// valid pointer to disc
+    wd_part_t	*part;		// valid pointer to partition, if file found
+
+    bool	patch_main;	// true: patch 'sys/main.dol'
+    bool	patch_staticr;	// true: patch 'files/rel/staticr.rel'
+
+    wd_memmap_item_t *main;	// NULL or found 'sys/main.dol'
+    wd_memmap_item_t *staticr;	// NULL or found 'files/rel/staticr.rel'
+}
+wd_patch_main_t;
+
+int wd_patch_main
+(
+    wd_patch_main_t	*pm,		// result only, will be initialized
+    wd_disc_t		*disc,		// valid disc
+    bool		patch_main,	// true: patch 'sys/main.dol'
+    bool		patch_staticr	// true: patch 'files/rel/staticr.rel'
 );
 
 //

@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -36,7 +36,7 @@
 
 #define _GNU_SOURCE 1
 
-#include "debug.h"
+#include "dclib/dclib-debug.h"
 #include "iso-interface.h"
 #include "lib-bzip2.h"
 #include "lib-lzma.h"
@@ -468,7 +468,7 @@ static enumError read_data
 
     if ( file_data_size > 2 * tempbuf_size )
 	return ERROR0(ERR_WIA_INVALID,
-	    "WIA chunk size to large: %s\n",sf->f.fname);
+	    "WIA chunk size too large: %s\n",sf->f.fname);
 
     bool align_except = false;
     u32 data_bytes_read = 0;
@@ -487,7 +487,7 @@ static enumError read_data
 
 	if ( file_data_size > dest_size )
 	    return ERROR0(ERR_WIA_INVALID,
-		"WIA chunk size to large: %s\n",sf->f.fname);
+		"WIA chunk size too large: %s\n",sf->f.fname);
 
 	enumError err = ReadAtF( &sf->f, file_offset, dest, file_data_size );
 	if (err)
@@ -1018,9 +1018,9 @@ enumError SetupReadWIA
     struct SuperFile_t	* sf		// file to setup
 )
 {
-    PRINT("#W# SetupReadWIA(%p) file=%d/%p, wc=%p wbfs=%p v=%s/%s\n",
+    PRINT("#W# SetupReadWIA(%p) file=%d/%p, wia=%p wbfs=%p v=%s/%s\n",
 		sf, GetFD(&sf->f), GetFP(&sf->f),
-		sf->wc, sf->wbfs,
+		sf->wia, sf->wbfs,
 		PrintVersionWIA(0,0,WIA_VERSION_READ_COMPATIBLE),
 		PrintVersionWIA(0,0,WIA_VERSION) );
     ASSERT(sf);
@@ -1073,7 +1073,7 @@ enumError SetupReadWIA
     //----- check file size
 
     if ( sf->f.st.st_size < fhead->wia_file_size )
-	SetupSplitFile(&sf->f,OFT_WIA,0);
+	SetupSplitWFile(&sf->f,OFT_WIA,0);
 
     if ( sf->f.st.st_size != fhead->wia_file_size )
 	return ERROR0(ERR_WIA_INVALID,
@@ -1113,7 +1113,7 @@ enumError SetupReadWIA
     const u32 load_part_size = disc->part_t_size * disc->n_part;
     if ( load_part_size > tempbuf_size )
 	return ERROR0(ERR_WIA_INVALID,
-	    "Total partition header size to large: %s\n",sf->f.fname);
+	    "Total partition header size too large: %s\n",sf->f.fname);
 
     ReadAtF(&sf->f,disc->part_off,tempbuf,load_part_size);
     if (err)
@@ -1157,7 +1157,7 @@ enumError SetupReadWIA
 	    wia->memory_usage += CalcMemoryUsageBZIP2(disc->compr_level,false);
 	    PRINT("DISABLE CACHE & OPEN STREAM\n");
 	    ClearCache(&sf->f);
-	    OpenStreamFile(&sf->f);
+	    OpenStreamWFile(&sf->f);
 	 #endif
 	    break;
 
@@ -2368,7 +2368,7 @@ enumError SetupWriteWIA
 	    wia->memory_usage += CalcMemoryUsageBZIP2(opt_compr_level,true);
 	 #endif
 	    PRINT("OPEN STREAM\n");
-	    OpenStreamFile(&sf->f);
+	    OpenStreamWFile(&sf->f);
 	    break;
 
 	case WD_COMPR_LZMA:

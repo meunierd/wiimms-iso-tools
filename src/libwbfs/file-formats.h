@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -129,6 +129,8 @@ enum // some constants
     WII_TITLE_OFF		= 0x20,
     WII_TITLE_SIZE		= 0x40,
 
+    WII_HEAD_INFO_SIZE		= 0x60,		// size of relevant info data in the header
+
     WII_KEY_SIZE		=   16,
     WII_FILE_PATH_SIZE		= 1000,
 
@@ -187,15 +189,28 @@ enum // some constants
 
 //
 ///////////////////////////////////////////////////////////////////////////////
+///////////////			misc				///////////////
+///////////////////////////////////////////////////////////////////////////////
+// [[id6_t]]
+
+typedef char id6_t[7];
+
+//-------------------------------------------------------------------------
+
+extern const char skeleton_marker[10];
+
+//
+///////////////////////////////////////////////////////////////////////////////
 ///////////////			enum wd_disc_type_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_disc_type_t]]
 
 typedef enum wd_disc_type_t
 {
     //**********************************************************************
     //***  never change this values, because they are used in archives!  ***
     //**********************************************************************
- 
+
     WD_DT_UNKNOWN	= 0,	// unknown disc type
     WD_DT_GAMECUBE,		// GameCube disc
     WD_DT_WII,			// Wii disc
@@ -208,6 +223,7 @@ typedef enum wd_disc_type_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			enum wd_disc_attrib_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_disc_attrib_t]]
 
 typedef enum wd_disc_attrib_t
 {
@@ -215,7 +231,7 @@ typedef enum wd_disc_attrib_t
 
     WD_DA_GAMECUBE	= 1 << WD_DT_GAMECUBE,
     WD_DA_WII		= 1 << WD_DT_WII,
-    
+
 
     //--- real attributes, detected by get_header_disc_type()
 
@@ -233,6 +249,7 @@ typedef enum wd_disc_attrib_t
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			enum wd_compression_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_compression_t]]
 
 typedef enum wd_compression_t
 {
@@ -284,6 +301,7 @@ ccp wd_print_compression
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct dol_header_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[dol_header_t]]
 
 typedef struct dol_header_t
 {
@@ -301,6 +319,7 @@ void ntoh_dol_header ( dol_header_t * dest, const dol_header_t * src );
 void hton_dol_header ( dol_header_t * dest, const dol_header_t * src );
 
 //-----------------------------------------------------------------------------
+// [[dol_record_t]]
 
 typedef struct dol_record_t
 {
@@ -332,6 +351,7 @@ const dol_record_t * search_dol_record
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////		    struct wbfs_inode_info_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wbfs_inode_info_t]]
 
 typedef struct wbfs_inode_info_t
 {
@@ -397,6 +417,7 @@ void hton_inode_info ( wbfs_inode_info_t * dest, const wbfs_inode_info_t * src )
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_header_128_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_header_128_t]]
 
 typedef struct wd_header_128_t
 {
@@ -419,9 +440,9 @@ typedef struct wd_header_128_t
 
   /* 0x20 */	char	disc_title[WII_TITLE_SIZE];	// off=WII_TITLE_OFF
 
-  /* 0x60 */	u8	diable_hash;
-  /* 0x61 */	u8	diable_encryption;
-  
+  /* 0x60 */	u8	disable_hash;
+  /* 0x61 */	u8	disable_encryption;
+
   /* 0x62 */	u8	padding[0x1e];
 
 } __attribute__ ((packed)) wd_header_128_t;
@@ -448,6 +469,7 @@ wd_disc_type_t get_header_128_disc_type
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_header_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_header_t]]
 
 typedef struct wd_header_t
 {
@@ -472,7 +494,7 @@ typedef struct wd_header_t
 
   /* 0x60 */	u8	diable_hash;
   /* 0x61 */	u8	diable_encryption;
-  
+
   /* 0x62 */	u8	padding[0x1e];
 
   /* 0x80 */	wbfs_inode_info_t iinfo;		// off=WBFS_INODE_INFO_OFF
@@ -501,6 +523,7 @@ wd_disc_type_t get_header_disc_type
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_boot_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_boot_t]]
 
 typedef struct wd_boot_t
 {
@@ -521,6 +544,7 @@ void hton_boot ( wd_boot_t * dest, const wd_boot_t * src );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			enum wd_age_rating_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_age_rating_t]]
 
 typedef enum wd_age_rating_t
 {
@@ -553,6 +577,7 @@ ccp wd_print_age_rating
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_region_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_region_t]]
 
 typedef struct wd_region_t
 {
@@ -567,6 +592,7 @@ __attribute__ ((packed)) wd_region_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////		    struct wd_ptab_info_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_ptab_info_t]]
 
 typedef struct wd_ptab_info_t
 {
@@ -579,6 +605,7 @@ __attribute__ ((packed)) wd_ptab_info_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////		    struct wd_ptab_entry_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_ptab_entry_t]]
 
 typedef struct wd_ptab_entry_t
 {
@@ -591,6 +618,7 @@ __attribute__ ((packed)) wd_ptab_entry_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_ptab_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_ptab_t]]
 
 typedef struct wd_ptab_t // example for a good partition table
 {
@@ -603,6 +631,7 @@ __attribute__ ((packed)) wd_ptab_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_ticket_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_ticket_t]]
 
 typedef struct wd_ticket_t
 {
@@ -651,6 +680,7 @@ bool ticket_is_fake_signed ( const wd_ticket_t * ticket, u32 ticket_size );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_part_header_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_part_header_t]]
 
 typedef struct wd_part_header_t
 {
@@ -672,6 +702,7 @@ void hton_part_header ( wd_part_header_t * dest, const wd_part_header_t * src );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////		      struct wd_tmd_content_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_tmd_content_t]]
 
 typedef struct wd_tmd_content_t
 {
@@ -687,6 +718,7 @@ __attribute__ ((packed)) wd_tmd_content_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			    struct wd_tmd_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_tmd_t]]
 
 typedef struct wd_tmd_t
 {
@@ -707,7 +739,7 @@ typedef struct wd_tmd_t
   /* 0x18c */	u8  title_id[8];
   /* 0x194 */	u32 title_type;
   /* 0x198 */	u16 group_id;
-  /* 0x19a */	u8  fake_sign[0x3e]; 	// padding => place of fake signing
+  /* 0x19a */	u8  fake_sign[0x3e];	// padding => place of fake signing
   /* 0x1d8 */	u32 access_rights;
   /* 0x1dc */	u16 title_version;
   /* 0x1de */	u16 n_content;
@@ -730,6 +762,7 @@ bool tmd_is_fake_signed ( const wd_tmd_t * tmd, u32 tmd_size );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////		    struct wd_part_control_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_part_control_t]]
 
 typedef struct wd_part_control_t
 {
@@ -759,7 +792,7 @@ wd_part_control_t; // packing not needed
 
 //----- setup
 
-// 0:ok, 1:error, sizes to large
+// 0:ok, 1:error, sizes too large
 int clear_part_control
 	( wd_part_control_t * pc, u32 tmd_size, u32 cert_size, u64 data_size );
 
@@ -775,6 +808,7 @@ int part_control_is_fake_signed ( const wd_part_control_t * pc );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_part_sector_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_part_sector_t]]
 
 typedef struct wd_part_sector_t
 {
@@ -793,6 +827,7 @@ __attribute__ ((packed)) wd_part_sector_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wd_fst_item_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wd_fst_item_t]]
 
 typedef struct wd_fst_item_t
 {
@@ -811,6 +846,7 @@ __attribute__ ((packed)) wd_fst_item_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wbfs_head_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wbfs_head_t]]
 
 typedef struct wbfs_head_t
 {
@@ -834,6 +870,7 @@ __attribute__ ((packed)) wbfs_head_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wbfs_disc_info_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wbfs_disc_info_t]]
 
 typedef struct wbfs_disc_info_t
 {
@@ -884,6 +921,7 @@ extern const char wpat_magic[12];
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			enum wpat_type_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_type_t]]
 
 typedef enum wpat_type_t
 {
@@ -930,6 +968,7 @@ ccp wpat_get_type_name ( wpat_type_t type, ccp return_if_invalid );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			union wpat_size_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_size_t]]
 
 typedef union wpat_size_t
 {
@@ -948,6 +987,7 @@ wpat_size_t wpat_calc_size ( wpat_type_t type, u32 size );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_header_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_header_t]]
 
 typedef struct wpat_header_t
 {
@@ -965,6 +1005,7 @@ __attribute__ ((packed)) wpat_header_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_comment_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_comment_t]]
 
 typedef struct wpat_comment_t
 {
@@ -977,6 +1018,7 @@ __attribute__ ((packed)) wpat_comment_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_data_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_data_t]]
 
 typedef struct wpat_data_t
 {
@@ -997,6 +1039,7 @@ __attribute__ ((packed)) wpat_data_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_filename_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_filename_t]]
 
 typedef struct wpat_filename_t
 {
@@ -1009,6 +1052,7 @@ __attribute__ ((packed)) wpat_filename_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_filenames_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_filenames_t]]
 
 typedef struct wpat_filenames_t
 {
@@ -1023,6 +1067,7 @@ __attribute__ ((packed)) wpat_filenames_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_patch_file_t	///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_patch_file_t]]
 
 typedef struct wpat_patch_file_t
 {
@@ -1039,6 +1084,7 @@ __attribute__ ((packed)) wpat_patch_file_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_toc_header_t	///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_toc_header_t]]
 
 typedef struct wpat_toc_header_t
 {
@@ -1054,11 +1100,12 @@ __attribute__ ((packed)) wpat_toc_header_t;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			struct wpat_toc_file_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wpat_toc_file_t]]
 
 typedef struct wpat_toc_file_t
 {
     /* 0x00 */	wpat_size_t	type_size;	// type (WPAT_F_TOC set) and record size
-    /* 0x04 */	u32		item_offset4;	// file offset/4 of file item
+    /* 0x08 */	u32		item_offset4;	// file offset/4 of file item
     /* 0x0c */	char		fname[0];	// filename, size always multiple of 4
 						// informative only
 }
@@ -1066,10 +1113,23 @@ __attribute__ ((packed)) wpat_toc_file_t;
 
 //
 ///////////////////////////////////////////////////////////////////////////////
-///////////////			consts & vars			///////////////
+///////////////			struct wiiuser_header_t		///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[wiiuser_header_t]]
 
-extern const char skeleton_marker[10];
+#define WIIUSER_MAGIC		"USER.BIN"
+#define WIIUSER_VERSION		1
+#define WIIUSER_HEAD_SIZE	0x10
+#define WIIUSER_DATA_ALIGN	0x04
+
+typedef struct wiiuser_header_t
+{
+    /* 0x00 */	char		magic[8];	// = WIIUSER_MAGIC
+    /* 0x08 */	u32		version;	// = WIIUSER_VERSION
+    /* 0x0c */	u32		size;		// size of following data
+    /* 0x10 */	u8 *		data[0];	// binary data == user.bin
+}
+__attribute__ ((packed)) wiiuser_header_t;
 
 //
 ///////////////////////////////////////////////////////////////////////////////

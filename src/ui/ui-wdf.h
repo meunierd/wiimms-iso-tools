@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -40,10 +40,10 @@
  ***************************************************************************/
 
 
-#ifndef WIT_UI_WDF_H
-#define WIT_UI_WDF_H
-#include "lib-std.h"
-#include "ui.h"
+#ifndef SZS_UI_WDF_H
+#define SZS_UI_WDF_H
+#include "dclib-basics.h"
+#include "dclib-ui.h"
 
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,6 +63,8 @@ typedef enum enumOptions
 	OPT_FILE_LIMIT,
 	OPT_BLOCK_SIZE,
 	OPT_WDF,
+	OPT_WDF1,
+	OPT_WDF2,
 	OPT_WIA,
 	OPT_CISO,
 	OPT_WBI,
@@ -73,6 +75,8 @@ typedef enum enumOptions
 	OPT_KEEP,
 	OPT_OVERWRITE,
 	OPT_PRESERVE,
+	OPT_AUTO_SPLIT,
+	OPT_NO_SPLIT,
 	OPT_SPLIT,
 	OPT_SPLIT_SIZE,
 	OPT_PREALLOC,
@@ -82,7 +86,7 @@ typedef enum enumOptions
 	OPT_COMPRESSION,
 	OPT_MEM,
 
-	OPT__N_SPECIFIC, // == 26 
+	OPT__N_SPECIFIC, // == 30 
 
 	//----- global options -----
 
@@ -93,13 +97,17 @@ typedef enum enumOptions
 	OPT_QUIET,
 	OPT_VERBOSE,
 	OPT_LOGGING,
+	OPT_COLOR,
+	OPT_COLOR_256,
+	OPT_NO_COLOR,
 	OPT_IO,
-	OPT_DIRECT,
+	OPT_DSYNC,
+	OPT_ALIGN_WDF,
 	OPT_TEST,
 	OPT_OLD,
 	OPT_NEW,
 
-	OPT__N_TOTAL // == 38
+	OPT__N_TOTAL // == 46
 
 } enumOptions;
 
@@ -121,6 +129,8 @@ typedef enum enumOptions
 //	OB_FILE_LIMIT		= 1llu << OPT_FILE_LIMIT,
 //	OB_BLOCK_SIZE		= 1llu << OPT_BLOCK_SIZE,
 //	OB_WDF			= 1llu << OPT_WDF,
+//	OB_WDF1			= 1llu << OPT_WDF1,
+//	OB_WDF2			= 1llu << OPT_WDF2,
 //	OB_WIA			= 1llu << OPT_WIA,
 //	OB_CISO			= 1llu << OPT_CISO,
 //	OB_WBI			= 1llu << OPT_WBI,
@@ -131,6 +141,8 @@ typedef enum enumOptions
 //	OB_KEEP			= 1llu << OPT_KEEP,
 //	OB_OVERWRITE		= 1llu << OPT_OVERWRITE,
 //	OB_PRESERVE		= 1llu << OPT_PRESERVE,
+//	OB_AUTO_SPLIT		= 1llu << OPT_AUTO_SPLIT,
+//	OB_NO_SPLIT		= 1llu << OPT_NO_SPLIT,
 //	OB_SPLIT		= 1llu << OPT_SPLIT,
 //	OB_SPLIT_SIZE		= 1llu << OPT_SPLIT_SIZE,
 //	OB_PREALLOC		= 1llu << OPT_PREALLOC,
@@ -149,6 +161,8 @@ typedef enum enumOptions
 //				| OB_OVERWRITE,
 //
 //	OB_GRP_DEST_PLUS	= OB_GRP_DEST
+//				| OB_AUTO_SPLIT
+//				| OB_NO_SPLIT
 //				| OB_SPLIT
 //				| OB_SPLIT_SIZE
 //				| OB_PREALLOC
@@ -159,6 +173,8 @@ typedef enum enumOptions
 //				| OB_MEM,
 //
 //	OB_GRP_FILETYPE		= OB_WDF
+//				| OB_WDF1
+//				| OB_WDF2
 //				| OB_WIA
 //				| OB_CISO
 //				| OB_WBI
@@ -245,14 +261,22 @@ typedef enum enumGetOpt
 
 	GO_XHELP		= 0x80,
 	GO_WIDTH,
+	GO_COLOR,
+	GO_COLOR_256,
+	GO_NO_COLOR,
 	GO_IO,
-	GO_DIRECT,
+	GO_DSYNC,
 	GO_CHUNK,
 	GO_LIMIT,
 	GO_FILE_LIMIT,
 	GO_BLOCK_SIZE,
+	GO_WDF1,
+	GO_WDF2,
+	GO_ALIGN_WDF,
 	GO_WIA,
 	GO_WBI,
+	GO_AUTO_SPLIT,
+	GO_NO_SPLIT,
 	GO_PREALLOC,
 	GO_CHUNK_MODE,
 	GO_CHUNK_SIZE,
@@ -269,19 +293,20 @@ typedef enum enumGetOpt
 ///////////////                  external vars                  ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-extern const InfoOption_t OptionInfo[OPT__N_TOTAL+1];
-extern const CommandTab_t CommandTab[];
-extern const char OptionShort[];
-extern const struct option OptionLong[];
-extern u8 OptionUsed[OPT__N_TOTAL+1];
-extern const u8 OptionIndex[OPT_INDEX_SIZE];
-extern const InfoCommand_t CommandInfo[CMD__N+1];
-extern const InfoUI_t InfoUI;
+//extern const InfoOption_t OptionInfo[OPT__N_TOTAL+1];
+//extern const KeywordTab_t CommandTab[];
+//extern const char OptionShort[];
+//extern const struct option OptionLong[];
+//extern u8 OptionUsed[OPT__N_TOTAL+1];
+//extern const OptionIndex_t OptionIndex[UIOPT_INDEX_SIZE];
+//UIOPT_INDEX_SIZE := 0x100 = 256
+//extern const InfoCommand_t CommandInfo[CMD__N+1];
+extern const InfoUI_t InfoUI_wdf;
 
 //
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////                       END                       ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#endif // WIT_UI_WDF_H
+#endif // SZS_UI_WDF_H
 

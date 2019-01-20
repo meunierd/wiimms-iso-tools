@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -37,7 +37,7 @@
 #ifndef WIT_LIB_WIA_H
 #define WIT_LIB_WIA_H 1
 
-#include "types.h"
+#include "dclib/dclib-types.h"
 #include "lib-std.h"
 #include "libwbfs/wiidisc.h"
 
@@ -236,7 +236,7 @@ typedef struct wia_part_t
 
     wia_part_data_t	pd[2];			// 0x10: 2 partition data segments
 						//   segment 0 is small and defined
-						//   for managment data (boot .. fst).
+						//   for management data (boot .. fst).
 						//   segment 1 takes the remaining data
 
 } __attribute__ ((packed)) wia_part_t;		// 0x30 = 48 = sizeof(wia_part_t)

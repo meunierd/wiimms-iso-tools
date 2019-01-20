@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -38,7 +38,7 @@
 #define WIT_PATCH_H 1
 
 #include <stdio.h>
-#include "types.h"
+#include "dclib/dclib-types.h"
 #include "lib-std.h"
 #include "wiidisc.h"
 
@@ -132,6 +132,13 @@ extern bool opt_ios_valid;
 
 bool ScanSysVersion ( u64 * ios, ccp arg );
 int ScanOptIOS ( ccp arg );
+
+//-----------------------------------------------------------------------------
+
+extern bool opt_http;
+extern ccp  opt_domain;
+int ScanOptDomain ( bool http, ccp domain );
+int patch_main ( wd_disc_t * disc );
 
 //-----------------------------------------------------------------------------
 

@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -37,7 +37,7 @@
 #ifndef WIT_TITELS_H
 #define WIT_TITELS_H 1
 
-#include "types.h"
+#include "dclib/dclib-types.h"
 
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -204,7 +204,7 @@ typedef enum {			// all values are well orders
 
 	IDB_NOT_FOUND,		// id not found
 	IDB_ABBREV_FOUND,	// id not found but an abbreviation
-	IDB_ID_FOUND,		// if found
+	IDB_ID_FOUND,		// id found
 	IDB_EXTENSION_FOUND,	// id not found but an extended version
 
 } TDBfind_t;

@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -35,6 +35,7 @@
  ***************************************************************************/
 
 #define _GNU_SOURCE 1
+#include "dclib/dclib-basics.h"
 #include "cert.h"
 
 //
@@ -914,50 +915,6 @@ u32 cert_fake_sign
 ///////////////			    base64			///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-const char TableEncode64[64] =
-{
-	'A','B','C','D','E','F','G','H','I','J','K','L','M',
-	'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-	'a','b','c','d','e','f','g','h','i','j','k','l','m',
-	'n','o','p','q','r','s','t','u','v','w','x','y','z',
-	'0','1','2','3','4','5','6','7','8','9',
-	'+','/'
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define xN BASE64_NULL
-#define xC BASE64_CONTROL
-#define xL BASE64_EOL
-#define xS BASE64_SPACE
-#define xP BASE64_SEPARATE
-#define xX BASE64_OTHER
-
-const char TableDecode64[256] =
-{
-	xN, xC, xC, xC,  xC, xC, xC, xC,  xC, xS, xL, xC,  xS, xL, xC, xC,
-	xC, xC, xC, xC,  xC, xC, xC, xC,  xC, xC, xC, xC,  xC, xC, xC, xC,
-	xS, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, 62,  xP, xX, xX, 63,
-	52, 53, 54, 55,  56, 57, 58, 59,  60, 61, xX, xP,  xX, xX, xX, xX,
-
-	xX,  0,  1,  2,   3,  4,  5,  6,   7,  8,  9, 10,  11, 12, 13, 14,
-	15, 16, 17, 18,  19, 20, 21, 22,  23, 24, 25, xX,  xX, xX, xX, xX,
-	xX, 26, 27, 28,  29, 30, 31, 32,  33, 34, 35, 36,  37, 38, 39, 40,
-	41, 42, 43, 44,  45, 46, 47, 48,  49, 50, 51, xX,  xX, xX, xX, xX,
-
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,
-	xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX,  xX, xX, xX, xX
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
 uint CalcEncode64len
 (
     // returns the needed buflen inclusive 0-Term
@@ -995,7 +952,7 @@ uint CalcEncode64len
 
 int Encode64buf
 (
-    // returns -1 if dest buffer is to small
+    // returns -1 if dest buffer is too small
     // otherwise it returns the number of written characters
 
     char	*buf,			// valid destination buffer

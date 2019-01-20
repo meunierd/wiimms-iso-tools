@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -37,7 +37,7 @@
 #ifndef WIT_ISO_INTERFACE_H
 #define WIT_ISO_INTERFACE_H 1
 
-#include "types.h"
+#include "dclib/dclib-types.h"
 #include "lib-sf.h"
 #include "patch.h"
 #include "dclib-utf8.h"
@@ -49,6 +49,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////                  wii iso discs                  ///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[WDiscInfo_t]]
 
 typedef struct WDiscInfo_t
 {
@@ -71,6 +72,7 @@ typedef struct WDiscInfo_t
 } WDiscInfo_t;
 
 //-----------------------------------------------------------------------------
+// [[WDiscListItem_t]]
 
 typedef struct WDiscListItem_t
 {
@@ -91,6 +93,7 @@ typedef struct WDiscListItem_t
 } WDiscListItem_t;
 
 //-----------------------------------------------------------------------------
+// [[WDiscList_t]]
 
 typedef struct WDiscList_t
 {
@@ -101,7 +104,6 @@ typedef struct WDiscList_t
 	SortMode sort_mode;
 
 } WDiscList_t;
-
 
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -292,6 +294,7 @@ typedef enum enumAction
 } enumAction;
 
 //-----------------------------------------------------------------------------
+// [[Iterator_t]]
 
 typedef struct Iterator_t
 {
@@ -345,6 +348,7 @@ typedef struct Iterator_t
 	bool		remove_source;	// remove option set
 	int		real_filename;	// set real filename without any selector
 	int		long_count;	// long counter for output
+	int		user_mode;	// any user mode
 	uint		job_count;	// job counter
 	uint		job_total;	// total jobs
 	uint		rm_count;	// remove counter
@@ -392,6 +396,7 @@ enumError SourceIteratorWarning ( Iterator_t * it, enumError max_err, bool silen
 extern bool allow_fst;		// FST diabled by default
 extern bool ignore_setup;	// ignore file 'setup.txt' while composing
 extern bool opt_links;		// find linked files and create hard links
+extern bool opt_user_bin;	// enable management of "sys/user.bin"
 
 extern wd_select_t part_selector;
 
@@ -443,6 +448,7 @@ typedef enum enumIsoMapType
 } enumIsoMapType;
 
 //-----------------------------------------------------------------------------
+// [[IsoMappingItem_t]]
 
 struct WiiFstPart_t;
 
@@ -459,6 +465,7 @@ typedef struct IsoMappingItem_t
 } IsoMappingItem_t;
 
 //-----------------------------------------------------------------------------
+// [[IsoMapping_t]]
 
 typedef struct IsoMapping_t
 {
@@ -481,6 +488,7 @@ void PrintIM ( IsoMapping_t * im, FILE * f, int indent );
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			file index list			///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[FileIndexItem_t]]
 
 typedef struct FileIndexItem_t
 {
@@ -491,6 +499,7 @@ typedef struct FileIndexItem_t
 } FileIndexItem_t;
 
 //-----------------------------------------------------------------------------
+// [[FileIndexData_t]]
 
 typedef struct FileIndexData_t
 {
@@ -501,6 +510,7 @@ typedef struct FileIndexData_t
 } FileIndexData_t;
 
 //-----------------------------------------------------------------------------
+// [[FileIndex_t]]
 
 typedef struct FileIndex_t
 {
@@ -530,10 +540,13 @@ void DumpFileIndex ( FILE *f, int indent, const FileIndex_t * fidx );
 ///////////////			    Wii FST			///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#define FST_SETUP_FILE   "setup.txt"
-#define FST_EXCLUDE_FILE "exclude.fst"
-#define FST_INCLUDE_FILE "include.fst"
-#define FST_ALIGN_FILE   "align-files.txt"
+// search and load 'sys/fst+.bin'  =>  0=off, 1=readonly, 2=read+create
+#define SUPPORT_FST_PLUS	0
+
+#define FST_SETUP_FILE		"setup.txt"
+#define FST_EXCLUDE_FILE	"exclude.fst"
+#define FST_INCLUDE_FILE	"include.fst"
+#define FST_ALIGN_FILE		"align-files.txt"
 
 enum // some const
 {
@@ -547,6 +560,7 @@ enum // some const
 extern ccp SpecialFilesFST[]; // NULL terminated list
 
 //-----------------------------------------------------------------------------
+// [[WiiFstFile_t]]
 
 typedef struct WiiFstFile_t
 {
@@ -561,6 +575,7 @@ typedef struct WiiFstFile_t
 } WiiFstFile_t;
 
 //-----------------------------------------------------------------------------
+// [[WiiFstPart_t]]
 
 typedef struct WiiFstPart_t
 {
@@ -603,6 +618,7 @@ typedef struct WiiFstPart_t
 } WiiFstPart_t;
 
 //-----------------------------------------------------------------------------
+// [[WiiFst_t]]
 
 typedef struct WiiFst_t
 {
@@ -645,6 +661,7 @@ typedef struct WiiFst_t
 } WiiFst_t;
 
 //-----------------------------------------------------------------------------
+// [[WiiFstInfo_t]]
 
 typedef struct WiiFstInfo_t
 {
@@ -666,7 +683,7 @@ typedef struct WiiFstInfo_t
 	bool		link_image;		// true: try 'link' before 'copy'
 	int		verbose;		// the verbosity level
 
-	ParamField_t	align_info;		// store align infos here
+	WiiParamField_t	align_info;		// store align infos here
 
 } WiiFstInfo_t;
 
@@ -787,6 +804,7 @@ void EncryptSectorGroup
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			    Verify_t			///////////////
 ///////////////////////////////////////////////////////////////////////////////
+// [[Verify_t]]
 
 typedef struct Verify_t
 {

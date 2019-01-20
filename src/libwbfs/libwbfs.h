@@ -9,15 +9,15 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
  *   Copyright (c) 2009 Kwiirk                                             *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -421,7 +421,7 @@ typedef void (*wbfs_check_func)
     uint		count,		// block usage count
     ccp			msg,		// clear text message
     uint		msg_len,	// strlen(msg)
-    void		* param		// user defined paramater
+    void		* param		// user defined parameter
 );
 
 //-----------------------------------------------------------------------------

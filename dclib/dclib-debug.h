@@ -1,22 +1,20 @@
 
 /***************************************************************************
- *                    __            __ _ ___________                       *
- *                    \ \          / /| |____   ____|                      *
- *                     \ \        / / | |    | |                           *
- *                      \ \  /\  / /  | |    | |                           *
- *                       \ \/  \/ /   | |    | |                           *
- *                        \  /\  /    | |    | |                           *
- *                         \/  \/     |_|    |_|                           *
  *                                                                         *
- *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                     _____     ____                                      *
+ *                    |  __ \   / __ \   _     _ _____                     *
+ *                    | |  \ \ / /  \_\ | |   | |  _  \                    *
+ *                    | |   \ \| |      | |   | | |_| |                    *
+ *                    | |   | || |      | |   | |  ___/                    *
+ *                    | |   / /| |   __ | |   | |  _  \                    *
+ *                    | |__/ / \ \__/ / | |___| | |_| |                    *
+ *                    |_____/   \____/  |_____|_|_____/                    *
+ *                                                                         *
+ *                       Wiimms source code library                        *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
- *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
- *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *        Copyright (c) 2012-2018 by Dirk Clemens <wiimm@wiimm.de>         *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -34,9 +32,138 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef SZS_DEBUG_H
-#define SZS_DEBUG_H 1
+#ifndef DCLIB_DEBUG_H
+#define DCLIB_DEBUG_H 1
 
+#include "dclib-types.h"
+#include <stdio.h>
+#include <stdarg.h>
+
+//
+///////////////////////////////////////////////////////////////////////////////
+///////////////			error handling			///////////////
+///////////////////////////////////////////////////////////////////////////////
+
+extern ccp progpath;	// full path of program, use ProgramPath() to access
+extern ccp progdir;	// directory part of progpath, use ProgramDirectory() to access
+extern ccp progname;	// program name, based on path or directly set
+
+extern ccp toolname;	// name of the tool, set by SetupProgname()
+extern ccp toolversion;	// version of the tool, set by SetupProgname()
+extern ccp tooltitle;	// title of the tool, set by SetupProgname()
+
+extern bool multi_processing;
+extern enumError last_error;
+extern enumError max_error;
+extern u32 error_count;
+
+//-----------------------------------------------------------------------------
+
+extern ccp (*GetErrorNameHook)( int stat, ccp ret_not_found );
+extern ccp (*GetErrorTextHook)( int stat, ccp ret_not_found );
+extern ccp GENERIC_ERROR_MESSAGE;
+
+ccp GetErrorName
+(
+    int		stat,		// error status, err := abs(stat)
+    ccp		ret_not_found	// not NULL: return this, if no message is found
+				//     NULL: return a generic message
+);
+
+ccp GetErrorText
+(
+    int		stat,		// error status, err := abs(stat)
+    ccp		ret_not_found	// not NULL: return this, if no message is found
+				//     NULL: return a generic message
+);
+
+void ListErrorCodes
+(
+    FILE	* f,		// valid output stream
+    int		indent,		// indent of output
+    bool	all		// true: print all user reserved messages too.
+);
+
+enumError PrintErrorArg ( ccp func, ccp file, unsigned int line,
+		int syserr, enumError err_code, ccp format, va_list arg );
+
+enumError PrintError ( ccp func, ccp file, unsigned int line,
+		int syserr, enumError err_code, ccp format, ... )
+		__attribute__ ((__format__(__printf__,6,7)));
+
+struct File_t;
+enumError PrintErrorFile ( ccp func, ccp file, uint line, struct File_t *F,
+		int syserr, enumError err_code, ccp format, ... )
+		__attribute__ ((__format__(__printf__,7,8)));
+
+enumError PrintErrorStat ( enumError err, int verbose, ccp cmdname );
+
+#undef ERROR
+#undef ERROR0
+#undef ERROR1
+#undef FILEERROR
+#undef FILEERROR0
+#undef FILEERROR1
+
+#define ERROR(se,code,...) PrintError(__FUNCTION__,__FILE__,__LINE__,se,code,__VA_ARGS__)
+#define ERROR0(code,...) PrintError(__FUNCTION__,__FILE__,__LINE__,0,code,__VA_ARGS__)
+#define ERROR1(code,...) PrintError(__FUNCTION__,__FILE__,__LINE__,errno,code,__VA_ARGS__)
+
+#define FILEERROR(f,se,code,...) \
+	PrintErrorFile(__FUNCTION__,__FILE__,__LINE__,f,se,code,__VA_ARGS__)
+#define FILEERROR0(f,code,...) \
+	PrintErrorFile(__FUNCTION__,__FILE__,__LINE__,f,0,code,__VA_ARGS__)
+#define FILEERROR1(f,code,...) \
+	PrintErrorFile(__FUNCTION__,__FILE__,__LINE__,f,errno,code,__VA_ARGS__)
+
+//-----------------------------------------------------------------------------
+
+void mark_used ( ccp name, ... );
+#define MARK_USED(...) mark_used(0,__VA_ARGS__)
+
+//
+///////////////////////////////////////////////////////////////////////////////
+///////////////			    hexdump			///////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// 0: don't use XDump
+// 1: use 'enable_xdump_wrapper' to decide and init it with FALSE
+// 2: use 'enable_xdump_wrapper' to decide and init it with TRUE
+// 3: force usage of XDump
+
+#ifndef ENABLE_HEXDUMP_WRAPPER
+  #ifdef TEST
+    #define ENABLE_HEXDUMP_WRAPPER 2
+  #else
+    #define ENABLE_HEXDUMP_WRAPPER 1
+  #endif
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if ENABLE_HEXDUMP_WRAPPER
+ extern int enable_xdump_wrapper;
+#endif
+
+extern ccp  hexdump_prefix;
+extern ccp  hexdump_eol;
+extern bool hexdump_align;
+
+// HexDump() and HexDump16() return the number of printed lines
+
+uint HexDump ( FILE * f, int indent, u64 addr, int addr_fw, int row_len,
+		const void * data, size_t count );
+
+uint HexDump16 ( FILE * f, int indent, u64 addr,
+		const void * data, size_t count );
+
+void HexDiff ( FILE * f, int indent, u64 addr, int addr_fw, int row_len,
+		const void * p_data1, size_t count1,
+		const void * p_data2, size_t count2 );
+
+void HexDiff16 ( FILE * f, int indent, u64 addr,
+		 const void * data1, size_t count1,
+		 const void * data2, size_t count2 );
 //
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////			DEBUG and TRACING		///////////////
@@ -47,7 +174,7 @@
 //  -------------------
 //
 //  If symbol 'DEBUG' or symbol _DEBUG' is defined, then and only then
-//  DEBUG and TRACING is enabled.
+//  DEBUG, DASSERT and TRACING are enabled.
 //
 //  There are to function like macros defined:
 //
@@ -56,17 +183,23 @@
 //        Ignored when TRACING is disabled.
 //        It works like the well known printf() function and include flushing.
 //
-//      TRACE_IF ( bool condition, ccp format, ... );
+//     TRACE_IF ( bool condition, ccp format, ... );
 //        Like TRACE(), but print only if 'condition' is true.
 //
-//      TRACELINE
+//     TRACELINE
 //        Print out current line and source.
 //
-//      TRACE_SIZEOF ( object_or_type );
+//     TRACE_SIZEOF ( object_or_type );
 //        Print out `sizeof(object_or_type)´
 //
-//      ASSERT(cond);
+//     ASSERT(cond);
 //	  If condition is false: print info and exit program.
+//
+//     DASSERT(cond);
+//	  Like ASSERT; but only active on DEBUG.
+//
+//     BINGO
+//        Like TRACELINE, but print to stderr instead custom file.
 //
 //
 //  There are more macros with a preceding 'no' defined:
@@ -80,20 +213,12 @@
 //      If you add a 'no' before a TRACE-Call it is disabled always.
 //      This makes the usage and disabling of multi lines traces very easy.
 //
+//
+//  The macros with a preceding 'x' are always active:
+//	xTRACELINE
+//	xBINGO
+//
 ///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-#include <stdio.h>
-#include <stdarg.h>
-
-#ifndef WIIMM_BASIC_TYPES
-  #define WIIMM_BASIC_TYPES 1
-  typedef const char *  ccp;
-  typedef unsigned char uchar;
-  typedef unsigned int  uint;
-  typedef unsigned long ulong;
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 
 #if defined(RELEASE)
@@ -125,7 +250,10 @@
   #define __attribute__(x)
 #endif
 
-extern FILE * TRACE_FILE;
+extern ccp TRACE_PREFIX; // never NULL
+extern FILE *TRACE_FILE;
+extern FILE *MEM_LOG_FILE;
+
 void TRACE_FUNC ( ccp format, ... )
 	__attribute__ ((__format__(__printf__,1,2)));
 void TRACE_ARG_FUNC ( ccp format, va_list arg );
@@ -133,6 +261,8 @@ void TRACE_ARG_FUNC ( ccp format, va_list arg );
 void PRINT_FUNC ( ccp format, ... )
 	__attribute__ ((__format__(__printf__,1,2)));
 void PRINT_ARG_FUNC ( ccp format, va_list arg );
+
+void BINGO_FUNC ( ccp func, int line, ccp src );
 
 void WAIT_FUNC ( ccp format, ... )
 	__attribute__ ((__format__(__printf__,1,2)));
@@ -180,13 +310,18 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 
     #define TRACE(...) TRACE_FUNC(__VA_ARGS__)
     #define TRACE_IF(cond,...) if (cond) TRACE_FUNC(__VA_ARGS__)
-    #define TRACELINE TRACE_FUNC("line #%d @ %s\n",__LINE__,__FILE__)
+    #define TRACELINE TRACE_FUNC("%s() line #%d @ %s\n",__FUNCTION__,__LINE__,__FILE__)
     #define TRACE_SIZEOF(t) TRACE_FUNC("%7zd ==%6zx/hex == sizeof(%s)\n",sizeof(t),sizeof(t),#t)
 
     #define HEXDUMP(i,a,af,rl,d,c) HexDump(stdout,i,a,af,rl,d,c);
     #define HEXDUMP16(i,a,d,c) HexDump16(stdout,i,a,d,c);
     #define TRACE_HEXDUMP(i,a,af,rl,d,c) HexDump(TRACE_FILE,i,a,af,rl,d,c);
     #define TRACE_HEXDUMP16(i,a,d,c) HexDump16(TRACE_FILE,i,a,d,c);
+
+    #define HEXDIFF(i,a,af,rl,d1,c1,d2,c2) HexDiff(stdout,i,a,af,rl,d1,c1,d2,c2);
+    #define HEXDIFF16(i,a,d1,c1,d2,c2) HexDiff16(stdout,i,a,d1,c1,d2,c2);
+    #define TRACE_HEXDIFF(i,a,af,rl,d1,c1,d2,c2) HexDiff(TRACE_FILE,i,a,af,rl,d1,c1,d2,c2);
+    #define TRACE_HEXDIFF16(i,a,d1,c1,d2,c2) HexDiff16(TRACE_FILE,i,a,d1,c1,d2,c2);
 
 #else
 
@@ -202,6 +337,10 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
     #define HEXDUMP16(a,i,d,c)
     #define TRACE_HEXDUMP(i,a,af,rl,d,c)
     #define TRACE_HEXDUMP16(i,a,d,c)
+    #define HEXDIFF(i,a,af,rl,d1,c1,d2,c2)
+    #define HEXDIFF16(a,i,d1,c1,d2,c2)
+    #define TRACE_HEXDIFF(i,a,af,rl,d1,c1,d2,c2)
+    #define TRACE_HEXDIFF16(i,a,d1,c1,d2,c2)
 
 #endif
 
@@ -210,7 +349,7 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 #undef ASSERT
 #undef ASSERT_MSG
 
-#if defined(DEBUG_ASSERT) || defined(_DEBUG_ASSERT)
+#if defined(DEBUG_ASSERT) || defined(_DEBUG_ASSERT) || defined(TEST)
 
     #define HAVE_ASSERT 1
 
@@ -235,7 +374,9 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 #undef PRINT
 #undef PRINT_IF
 #undef BINGO
+#undef xBINGO
 #undef HAVE_PRINT
+#undef PRINT_TIME
 
 #undef HAVE_PRINT0	// always false
 #define HAVE_PRINT0 0
@@ -246,7 +387,9 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 
     #define PRINT(...) PRINT_FUNC(__VA_ARGS__)
     #define PRINT_IF(cond,...) if (cond) PRINT_FUNC(__VA_ARGS__)
-    #define BINGO PRINT_FUNC("BINGO! %s() #%d @ %s\n",__FUNCTION__,__LINE__,__FILE__)
+    #define BINGO BINGO_FUNC(__FUNCTION__,__LINE__,__FILE__)
+
+    void PRINT_TIME ( time_t time, ccp title );
 
 #else
 
@@ -256,7 +399,15 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
     #define PRINT_IF	TRACE_IF
     #define BINGO	TRACELINE
 
+    #define PRINT_TIME(...)
+
 #endif
+
+#define xBINGO BINGO_FUNC(__FUNCTION__,__LINE__,__FILE__)
+#define xTRACELINE TRACE_FUNC("%s() line #%d @ %s\n",__FUNCTION__,__LINE__,__FILE__)
+
+#undef PRINTF
+#define PRINTF PRINT
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -312,10 +463,10 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 #undef noTRACE_SIZEOF
 #undef noPRINT
 #undef noPRINT_IF
+#undef noPRINT_TIME
 #undef noWAIT
 #undef noWAIT_IF
 #undef noASSERT
-
 
 #ifdef TESTTRACE
 
@@ -325,6 +476,7 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
     #define noTRACE_SIZEOF	TRACE_SIZEOF
     #define noPRINT		PRINT
     #define noPRINT_IF		PRINT_IF
+    #define noPRINT_TIME	PRINT_TIME
     #define noWAIT		WAIT
     #define noWAIT_IF		WAIT_IF
     #define noASSERT		ASSERT
@@ -338,6 +490,7 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
     #define noTRACE_SIZEOF(t)
     #define noPRINT(...)
     #define noPRINT_IF(...)
+    #define noPRINT_TIME(...)
     #define noWAIT(...)
     #define noWAIT_IF(...)
     #define noASSERT(cond)
@@ -362,14 +515,19 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 //  0: disabled
 //  1: enable a watch point for a memory location
 
-#ifdef TEST
+#ifndef TRACE_ALLOC_MODE
+ #ifdef MEMDEBUG
+    #define TRACE_ALLOC_MODE 4
+ #elif TEST
     #define TRACE_ALLOC_MODE 3
-    #define ENABLE_MEM_CHECK 0
-#elif DEBUG
+ #elif DEBUG
     #define TRACE_ALLOC_MODE 2
-    #define ENABLE_MEM_CHECK 0
-#else
-    #define TRACE_ALLOC_MODE 2
+ #else
+    #define TRACE_ALLOC_MODE 1
+ #endif
+#endif
+
+#ifndef ENABLE_MEM_CHECK
     #define ENABLE_MEM_CHECK 0
 #endif
 
@@ -387,44 +545,53 @@ void WAIT_ARG_FUNC ( ccp format, va_list arg );
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void my_free ( void * ptr );
+void dclib_free ( void * ptr );
+
+void * dclib_xcalloc  ( size_t nmemb, size_t size );
+void * dclib_xmalloc  ( size_t size );
+void * dclib_xrealloc ( void * ptr, size_t size );
+char * dclib_xstrdup  ( ccp src );
 
 #if TRACE_ALLOC_MODE > 1
-    void * my_calloc  ( ccp,ccp,uint, size_t nmemb, size_t size );
-    void * my_malloc  ( ccp,ccp,uint, size_t size );
-    void * my_realloc ( ccp,ccp,uint, void * ptr, size_t size );
-    char * my_strdup  ( ccp,ccp,uint, ccp src );
-    char * my_strdup2 ( ccp,ccp,uint, ccp src1, ccp src2 );
-    char * my_strdup3 ( ccp,ccp,uint, ccp src1, ccp src2, ccp src3 );
-    void * my_memdup  ( ccp,ccp,uint, const void * src, size_t copylen );
+    void * dclib_calloc  ( ccp,ccp,uint, size_t nmemb, size_t size );
+    void * dclib_malloc  ( ccp,ccp,uint, size_t size );
+    void * dclib_realloc ( ccp,ccp,uint, void * ptr, size_t size );
+    char * dclib_strdup  ( ccp,ccp,uint, ccp src );
+    char * dclib_strdup2 ( ccp,ccp,uint, ccp src1, ccp src2 );
+    char * dclib_strdup3 ( ccp,ccp,uint, ccp src1, ccp src2, ccp src3 );
+    void * dclib_memdup  ( ccp,ccp,uint, const void * src, size_t copylen );
 #else
-    void * my_calloc  ( size_t nmemb, size_t size );
-    void * my_malloc  ( size_t size );
-    void * my_realloc ( void * ptr, size_t size );
-    char * my_strdup  ( ccp src );
-    char * my_strdup2 ( ccp src1, ccp src2 );
-    char * my_strdup3 ( ccp src1, ccp src2, ccp src3 );
-    void * my_memdup  ( const void * src, size_t copylen );
+    void * dclib_calloc  ( size_t nmemb, size_t size );
+    void * dclib_malloc  ( size_t size );
+    void * dclib_realloc ( void * ptr, size_t size );
+    char * dclib_strdup  ( ccp src );
+    char * dclib_strdup2 ( ccp src1, ccp src2 );
+    char * dclib_strdup3 ( ccp src1, ccp src2, ccp src3 );
+    void * dclib_memdup  ( const void * src, size_t copylen );
 #endif
 
-void   trace_free    ( ccp,ccp,uint, void * ptr );
-void * trace_calloc  ( ccp,ccp,uint, size_t nmemb, size_t size );
-void * trace_malloc  ( ccp,ccp,uint, size_t size );
-void * trace_realloc ( ccp,ccp,uint, void *ptr, size_t size );
-char * trace_strdup  ( ccp,ccp,uint, ccp src );
-char * trace_strdup2 ( ccp,ccp,uint, ccp src1, ccp src2 );
-char * trace_strdup3 ( ccp,ccp,uint, ccp src1, ccp src2, ccp src3 );
-void * trace_memdup  ( ccp,ccp,uint, const void * src, size_t copylen );
+uint   trace_test_alloc	( ccp,ccp,uint, const void * ptr, bool hexdump );
+void   trace_free	( ccp,ccp,uint, void * ptr );
+void * trace_calloc	( ccp,ccp,uint, size_t nmemb, size_t size );
+void * trace_malloc	( ccp,ccp,uint, size_t size );
+void * trace_realloc	( ccp,ccp,uint, void *ptr, size_t size );
+char * trace_strdup	( ccp,ccp,uint, ccp src );
+char * trace_strdup2	( ccp,ccp,uint, ccp src1, ccp src2 );
+char * trace_strdup3	( ccp,ccp,uint, ccp src1, ccp src2, ccp src3 );
+void * trace_memdup	( ccp,ccp,uint, const void * src, size_t copylen );
 
 #if TRACE_ALLOC_MODE > 2
     void InitializeTraceAlloc();
     int  CheckTraceAlloc ( ccp func, ccp file, unsigned int line );
     void DumpTraceAlloc ( ccp func, ccp file, unsigned int line, FILE * f );
+    struct mem_info_t *RegisterAlloc
+	( ccp func, ccp file, uint line, cvp data, uint size, bool filler );
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
 #if TRACE_ALLOC_MODE > 2
+    #define TEST_ALLOC(ptr,hexd) trace_test_alloc(__FUNCTION__,__FILE__,__LINE__,ptr,hexd)
     #define FREE(ptr) trace_free(__FUNCTION__,__FILE__,__LINE__,ptr)
     #define CALLOC(nmemb,size) trace_calloc(__FUNCTION__,__FILE__,__LINE__,nmemb,size)
     #define MALLOC(size) trace_malloc(__FUNCTION__,__FILE__,__LINE__,size)
@@ -437,32 +604,36 @@ void * trace_memdup  ( ccp,ccp,uint, const void * src, size_t copylen );
     #define CHECK_TRACE_ALLOC CheckTraceAlloc(__FUNCTION__,__FILE__,__LINE__)
     #define DUMP_TRACE_ALLOC(f)  DumpTraceAlloc(__FUNCTION__,__FILE__,__LINE__,f)
 #elif TRACE_ALLOC_MODE > 1
-    #define FREE(ptr) my_free(ptr)
-    #define CALLOC(nmemb,size) my_calloc(__FUNCTION__,__FILE__,__LINE__,nmemb,size)
-    #define MALLOC(size) my_malloc(__FUNCTION__,__FILE__,__LINE__,size)
-    #define REALLOC(ptr,size) my_realloc(__FUNCTION__,__FILE__,__LINE__,ptr,size)
-    #define STRDUP(src) my_strdup(__FUNCTION__,__FILE__,__LINE__,src)
-    #define STRDUP2(src1,src2) my_strdup2(__FUNCTION__,__FILE__,__LINE__,src1,src2)
-    #define STRDUP3(src1,src2,src3) my_strdup2(__FUNCTION__,__FILE__,__LINE__,src1,src2,src3)
-    #define MEMDUP(src,size) my_memdup(__FUNCTION__,__FILE__,__LINE__,src,size)
+    #define TEST_ALLOC(ptr,hexd)
+    #define FREE(ptr) dclib_free(ptr)
+    #define CALLOC(nmemb,size) dclib_calloc(__FUNCTION__,__FILE__,__LINE__,nmemb,size)
+    #define MALLOC(size) dclib_malloc(__FUNCTION__,__FILE__,__LINE__,size)
+    #define REALLOC(ptr,size) dclib_realloc(__FUNCTION__,__FILE__,__LINE__,ptr,size)
+    #define STRDUP(src) dclib_strdup(__FUNCTION__,__FILE__,__LINE__,src)
+    #define STRDUP2(src1,src2) dclib_strdup2(__FUNCTION__,__FILE__,__LINE__,src1,src2)
+    #define STRDUP3(src1,src2,src3) dclib_strdup3(__FUNCTION__,__FILE__,__LINE__,src1,src2,src3)
+    #define MEMDUP(src,size) dclib_memdup(__FUNCTION__,__FILE__,__LINE__,src,size)
     #define INIT_TRACE_ALLOC
     #define CHECK_TRACE_ALLOC
     #define DUMP_TRACE_ALLOC(f)
 #else
-    #define FREE(ptr) my_free(ptr)
-    #define CALLOC(nmemb,size) my_calloc(nmemb,size)
-    #define MALLOC(size) my_malloc(size)
-    #define REALLOC(ptr,size) my_realloc(ptr,size)
-    #define STRDUP(src) my_strdup(src)
-    #define STRDUP2(src1,src2) my_strdup2(src1,src2)
-    #define STRDUP3(src1,src2,src3) my_strdup2(src1,src2,src3)
-    #define MEMDUP(src,size) my_memdup(src,size)
+    #define TEST_ALLOC(ptr,hexd)
+    #define FREE(ptr) dclib_free(ptr)
+    #define CALLOC(nmemb,size) dclib_calloc(nmemb,size)
+    #define MALLOC(size) dclib_malloc(size)
+    #define REALLOC(ptr,size) dclib_realloc(ptr,size)
+    #define STRDUP(src) dclib_strdup(src)
+    #define STRDUP2(src1,src2) dclib_strdup2(src1,src2)
+    #define STRDUP3(src1,src2,src3) dclib_strdup3(src1,src2,src3)
+    #define MEMDUP(src,size) dclib_memdup(src,size)
     #define INIT_TRACE_ALLOC
     #define CHECK_TRACE_ALLOC
     #define DUMP_TRACE_ALLOC(f)
 #endif
 
-#ifndef WIIMM_DEBUG_C
+#define XFREE(ptr) dclib_free(ptr)
+
+#ifndef DCLIB_DEBUG_C
     #define free	do_not_use_free
     #define calloc	do_not_use_calloc
     #define malloc	do_not_use_malloc
@@ -476,4 +647,4 @@ void * trace_memdup  ( ccp,ccp,uint, const void * src, size_t copylen );
 ///////////////			    END				///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#endif // SZS_DEBUG_H
+#endif // DCLIB_DEBUG_H

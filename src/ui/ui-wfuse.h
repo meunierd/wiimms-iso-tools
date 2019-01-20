@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -40,10 +40,10 @@
  ***************************************************************************/
 
 
-#ifndef WIT_UI_WFUSE_H
-#define WIT_UI_WFUSE_H
-#include "lib-std.h"
-#include "ui.h"
+#ifndef SZS_UI_WFUSE_H
+#define SZS_UI_WFUSE_H
+#include "dclib-basics.h"
+#include "dclib-ui.h"
 
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -120,18 +120,19 @@ typedef enum enumGetOpt
 ///////////////                  external vars                  ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-extern const InfoOption_t OptionInfo[OPT__N_TOTAL+1];
-extern const char OptionShort[];
-extern const struct option OptionLong[];
-extern u8 OptionUsed[OPT__N_TOTAL+1];
-extern const u8 OptionIndex[OPT_INDEX_SIZE];
-extern const InfoCommand_t CommandInfo[CMD__N+1];
-extern const InfoUI_t InfoUI;
+//extern const InfoOption_t OptionInfo[OPT__N_TOTAL+1];
+//extern const char OptionShort[];
+//extern const struct option OptionLong[];
+//extern u8 OptionUsed[OPT__N_TOTAL+1];
+//extern const OptionIndex_t OptionIndex[UIOPT_INDEX_SIZE];
+//UIOPT_INDEX_SIZE := 0x100 = 256
+//extern const InfoCommand_t CommandInfo[CMD__N+1];
+extern const InfoUI_t InfoUI_wfuse;
 
 //
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////                       END                       ///////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#endif // WIT_UI_WFUSE_H
+#endif // SZS_UI_WFUSE_H
 

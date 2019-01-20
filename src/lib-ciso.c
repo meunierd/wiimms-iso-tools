@@ -9,14 +9,14 @@
  *                         \/  \/     |_|    |_|                           *
  *                                                                         *
  *                           Wiimms ISO Tools                              *
- *                         http://wit.wiimm.de/                            *
+ *                         https://wit.wiimm.de/                           *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
  *   This file is part of the WIT project.                                 *
- *   Visit http://wit.wiimm.de/ for project details and sources.           *
+ *   Visit https://wit.wiimm.de/ for project details and sources.          *
  *                                                                         *
- *   Copyright (c) 2009-2013 by Dirk Clemens <wiimm@wiimm.de>              *
+ *   Copyright (c) 2009-2017 by Dirk Clemens <wiimm@wiimm.de>              *
  *                                                                         *
  ***************************************************************************
  *                                                                         *
@@ -45,7 +45,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-#include "debug.h"
+#include "dclib/dclib-debug.h"
 #include "libwbfs.h"
 #include "lib-sf.h"
 #include "wbfs-interface.h"
@@ -64,7 +64,7 @@ u32  opt_max_chunks		= 0;
 
 int ScanChunkMode ( ccp source )
 {
-    static const CommandTab_t tab[] =
+    static const KeywordTab_t tab[] =
     {
 	{ CHUNK_MODE_ISO,	"ISO",	 0,	0 },
 	{ CHUNK_MODE_POW2,	"POW2",	"2",	0 },
@@ -74,7 +74,7 @@ int ScanChunkMode ( ccp source )
 	{ 0,0,0,0 }
     };
 
-    const CommandTab_t * cmd = ScanCommand(0,source,tab);
+    const KeywordTab_t * cmd = ScanKeyword(0,source,tab);
     if (cmd)
     {
 	opt_chunk_mode = cmd->id;
@@ -598,7 +598,7 @@ enumError WriteCISO ( SuperFile_t * sf, off_t off, const void * buf, size_t coun
 	{
 	    if ( !sf->f.disable_errors && sf->f.last_error != ERR_WRITE_FAILED )
 		ERROR1 ( ERR_WRITE_FAILED,
-			"File to large [%c=%d, block=%u/%u]: %s\n",
+			"File too large [%c=%d, block=%u/%u]: %s\n",
 			GetFT(&sf->f), GetFD(&sf->f),
 			block, ci->map_size, sf->f.fname );
 	    return sf->f.last_error = ERR_WRITE_FAILED;
